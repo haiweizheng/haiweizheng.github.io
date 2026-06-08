@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gradient Descent Failure Cases</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --ink: #202124;
+      --muted: #626976;
+      --line: #d8dde6;
+      --grid: #e8ebf0;
+      --path: #c7432b;
+      --global: #147f74;
+      --local: #6b58d3;
+      --shadow: 0 18px 45px rgba(31, 43, 58, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(20, 127, 116, 0.10), transparent 34%),
+        linear-gradient(300deg, rgba(199, 67, 43, 0.10), transparent 32%),
+        var(--bg);
+    }
+
+    main {
+      width: min(1160px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      padding: 16px;
+      position: sticky;
+      top: 12px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .control {
+      padding: 10px;
+      border: 1px solid var(--grid);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .algorithm {
+      margin-bottom: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .algorithm h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .formula {
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid var(--grid);
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .algorithm ol {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    output {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-weight: 540;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 10px 0 0;
+      accent-color: var(--path);
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .status strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .metric {
+      padding-top: 9px;
+      margin-top: 9px;
+      border-top: 1px solid var(--grid);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .plots {
+      display: grid;
+      gap: 16px;
+    }
+
+    .plot-card {
+      padding: 14px;
+    }
+
+    .plot-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .readout {
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+    }
+
+    .note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 860px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+
+      .plot-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .readout {
+        text-align: left;
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Gradient descent 的两个失效例子</h1>
+      <p class="subtitle">普通 GD 只根据当前位置的梯度走下一步。下面两张图会自动循环播放：一个展示 GD 掉进左边小坑后出不来，另一个展示它从斜坡滑到平地后，因为梯度太小而走不到远处的最优坑。</p>
+    </header>
+
+    <section class="workspace">
+      <aside class="panel controls" aria-label="GD controls">
+        <div class="algorithm">
+          <h2>GD 算法</h2>
+          <div class="formula">theta = theta - lr * grad(L(theta))</div>
+          <ol>
+            <li>初始化参数 theta</li>
+            <li>重复计算梯度并沿负梯度方向更新</li>
+          </ol>
+        </div>
+
+        <div class="control-grid">
+          <div class="control">
+            <label for="learningRate">学习率 <output id="learningRateValue">0.055</output></label>
+            <input id="learningRate" type="range" min="0.005" max="0.16" step="0.005" value="0.055">
+          </div>
+
+          <div class="control">
+            <label for="steps">训练次数 <output id="stepsValue">90</output></label>
+            <input id="steps" type="range" min="1" max="220" step="1" value="90">
+          </div>
+        </div>
+
+        <div class="status">
+          <strong>当前读数</strong>
+          <div id="trapStatus">局部坑：正在计算</div>
+          <div class="metric" id="plateauStatus">平地：正在计算</div>
+        </div>
+      </aside>
+
+      <section class="plots">
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子一：局部最小值坑</h2>
+            <div class="readout" id="trapReadout">step 0 / 90</div>
+          </div>
+          <svg id="trapSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent trapped in a local minimum">
+            <defs>
+              <marker id="trapArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--path)"></path>
+              </marker>
+            </defs>
+            <g id="trapMesh"></g>
+            <g id="trapAxes"></g>
+            <path id="trapPath" fill="none" stroke="var(--path)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#trapArrow)"></path>
+            <circle id="trapStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="trapEndDot" r="6.8" fill="var(--path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="trapLocalDot" r="6.5" fill="var(--local)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="trapGlobalDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="trapStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="trapLocalLabel" fill="var(--local)" font-size="13" font-weight="700">small pit</text>
+            <text id="trapGlobalLabel" fill="var(--global)" font-size="13" font-weight="700">big pit</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--path)"></i>GD path</span>
+            <span><i class="swatch" style="background: var(--local)"></i>小坑</span>
+            <span><i class="swatch" style="background: var(--global)"></i>大坑</span>
+          </div>
+          <p class="note">默认设置下，GD 会停在左侧小坑。右侧大坑更低，但从当前起点出发时，普通 GD 只会沿着眼前的坡度进入最近的坑。</p>
+        </article>
+
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子二：斜坡到平地后走不动</h2>
+            <div class="readout" id="plateauReadout">step 0 / 90</div>
+          </div>
+          <svg id="plateauSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent sliding down to a flat plateau and missing the best pit">
+            <defs>
+              <marker id="plateauArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--path)"></path>
+              </marker>
+            </defs>
+            <g id="plateauMesh"></g>
+            <g id="plateauAxes"></g>
+            <path id="plateauPath" fill="none" stroke="var(--path)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#plateauArrow)"></path>
+            <circle id="plateauStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="plateauEndDot" r="6.8" fill="var(--path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="plateauDropDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="plateauStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="plateauEndLabel" fill="var(--path)" font-size="13" font-weight="700">stuck on flat</text>
+            <text id="plateauDropLabel" fill="var(--global)" font-size="13" font-weight="700">best pit</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--path)"></i>GD path</span>
+            <span><i class="swatch" style="background: #202124"></i>起点</span>
+            <span><i class="swatch" style="background: var(--global)"></i>平地上的最优坑</span>
+          </div>
+          <p class="note">这里的路径会先从斜坡下降到近似平地。平地远处有一个更低的坑，但当前位置附近几乎没有坡度，GD 没有足够信号继续走过去。</p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const learningRate = document.getElementById("learningRate");
+      const steps = document.getElementById("steps");
+      const learningRateValue = document.getElementById("learningRateValue");
+      const stepsValue = document.getElementById("stepsValue");
+      const trapReadout = document.getElementById("trapReadout");
+      const plateauReadout = document.getElementById("plateauReadout");
+      const trapStatus = document.getElementById("trapStatus");
+      const plateauStatus = document.getElementById("plateauStatus");
+
+      const trap = {
+        mesh: document.getElementById("trapMesh"),
+        axes: document.getElementById("trapAxes"),
+        path: document.getElementById("trapPath"),
+        startDot: document.getElementById("trapStartDot"),
+        endDot: document.getElementById("trapEndDot"),
+        localDot: document.getElementById("trapLocalDot"),
+        globalDot: document.getElementById("trapGlobalDot"),
+        startLabel: document.getElementById("trapStartLabel"),
+        localLabel: document.getElementById("trapLocalLabel"),
+        globalLabel: document.getElementById("trapGlobalLabel")
+      };
+
+      const plateau = {
+        mesh: document.getElementById("plateauMesh"),
+        axes: document.getElementById("plateauAxes"),
+        path: document.getElementById("plateauPath"),
+        startDot: document.getElementById("plateauStartDot"),
+        endDot: document.getElementById("plateauEndDot"),
+        dropDot: document.getElementById("plateauDropDot"),
+        startLabel: document.getElementById("plateauStartLabel"),
+        endLabel: document.getElementById("plateauEndLabel"),
+        dropLabel: document.getElementById("plateauDropLabel")
+      };
+
+      const bounds = { xmin: -3.35, xmax: 3.35, ymin: -2.65, ymax: 2.65 };
+      const trapStart = { x: -2.65, y: 1.45 };
+      const trapLocal = { x: -1.39226, y: 0.573326 };
+      const trapGlobal = { x: 1.452486, y: -0.277149 };
+      const plateauStart = { x: -2.75, y: 0.36 };
+      const plateauDrop = { x: 1.55, y: -0.22 };
+      let frame = 0;
+
+      const trapProjection = {
+        cx: 442,
+        cy: 318,
+        sx: 72,
+        sy: 34,
+        sz: 58,
+        zOffset: 0.1
+      };
+
+      const plateauProjection = {
+        cx: 442,
+        cy: 255,
+        sx: 72,
+        sy: 28,
+        sz: 62,
+        zOffset: -0.2
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function fmt(value, digits) {
+        return Number(value).toFixed(digits);
+      }
+
+      function project(x, y, z, cfg) {
+        return {
+          x: cfg.cx + (x - y) * cfg.sx,
+          y: cfg.cy + (x + y) * cfg.sy - (z - cfg.zOffset) * cfg.sz
+        };
+      }
+
+      function gaussian(x, y, cx, cy, sx0, sy0, amp) {
+        const dx = x - cx;
+        const dy = y - cy;
+        const e = Math.exp(-0.5 * (dx * dx / (sx0 * sx0) + dy * dy / (sy0 * sy0)));
+        return {
+          value: amp * e,
+          gx: amp * e * (-dx / (sx0 * sx0)),
+          gy: amp * e * (-dy / (sy0 * sy0))
+        };
+      }
+
+      function trapLossGrad(x, y) {
+        let value = 0.035 * x * x + 0.025 * y * y;
+        let gx = 0.07 * x;
+        let gy = 0.05 * y;
+        const terms = [
+          { amp: -1.25, cx: -1.42, cy: 0.58, sx: 0.58, sy: 0.52 },
+          { amp: -2.25, cx: 1.48, cy: -0.28, sx: 0.78, sy: 0.68 }
+        ];
+
+        for (const term of terms) {
+          const g = gaussian(x, y, term.cx, term.cy, term.sx, term.sy, term.amp);
+          value += g.value;
+          gx += g.gx;
+          gy += g.gy;
+        }
+
+        return { value, gx, gy };
+      }
+
+      function sigmoid(t) {
+        return 1 / (1 + Math.exp(-t));
+      }
+
+      function plateauLossGrad(x, y) {
+        const s = sigmoid(6.5 * (x + 2.25));
+        const pit = gaussian(x, y, plateauDrop.x, plateauDrop.y, 0.34, 0.34, -0.95);
+        const value = 0.85 - 1.10 * s + 0.0012 * (x + 0.62) * (x + 0.62) + 0.0015 * y * y + pit.value;
+        const gx = -1.10 * 6.5 * s * (1 - s) + 0.0024 * (x + 0.62) + pit.gx;
+        const gy = 0.003 * y + pit.gy;
+        return { value, gx, gy };
+      }
+
+      function simulate(lossFn, start, lr, count) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = lossFn(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy) });
+
+          if (i < count) {
+            x -= lr * current.gx;
+            y -= lr * current.gy;
+            x = clamp(x, bounds.xmin, bounds.xmax);
+            y = clamp(y, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function polyline(points, width, color, opacity) {
+        return "<polyline points=\"" + points + "\" fill=\"none\" stroke=\"" + color + "\" stroke-width=\"" + width + "\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"" + opacity + "\"/>";
+      }
+
+      function drawMesh(target, lossFn, cfg) {
+        const xCount = 17;
+        const yCount = 13;
+        const pieces = [];
+
+        for (let xi = 0; xi < xCount; xi += 1) {
+          const x = bounds.xmin + xi / (xCount - 1) * (bounds.xmax - bounds.xmin);
+          const pts = [];
+          for (let yi = 0; yi < yCount; yi += 1) {
+            const y = bounds.ymin + yi / (yCount - 1) * (bounds.ymax - bounds.ymin);
+            const z = lossFn(x, y).value;
+            const p = project(x, y, z, cfg);
+            pts.push(p.x.toFixed(1) + "," + p.y.toFixed(1));
+          }
+          pieces.push(polyline(pts.join(" "), xi % 4 === 0 ? 1.05 : 0.62, "#111", xi % 4 === 0 ? 0.50 : 0.20));
+        }
+
+        for (let yi = 0; yi < yCount; yi += 1) {
+          const y = bounds.ymin + yi / (yCount - 1) * (bounds.ymax - bounds.ymin);
+          const pts = [];
+          for (let xi = 0; xi < xCount; xi += 1) {
+            const x = bounds.xmin + xi / (xCount - 1) * (bounds.xmax - bounds.xmin);
+            const z = lossFn(x, y).value;
+            const p = project(x, y, z, cfg);
+            pts.push(p.x.toFixed(1) + "," + p.y.toFixed(1));
+          }
+          pieces.push(polyline(pts.join(" "), yi % 4 === 0 ? 1.05 : 0.62, "#111", yi % 4 === 0 ? 0.50 : 0.20));
+        }
+
+        target.innerHTML = pieces.join("");
+      }
+
+      function drawAxes(target, lossFn, cfg) {
+        const floorZ = -2.25;
+        const o = project(bounds.xmin, bounds.ymin, floorZ, cfg);
+        const xEnd = project(bounds.xmax, bounds.ymin, floorZ, cfg);
+        const yEnd = project(bounds.xmin, bounds.ymax, floorZ, cfg);
+        const zEnd = project(bounds.xmin, bounds.ymin, 1.65, cfg);
+        const originSurface = project(bounds.xmin, bounds.ymin, lossFn(bounds.xmin, bounds.ymin).value, cfg);
+        target.innerHTML = [
+          "<line x1=\"" + o.x + "\" y1=\"" + o.y + "\" x2=\"" + xEnd.x + "\" y2=\"" + xEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.48\"/>",
+          "<line x1=\"" + o.x + "\" y1=\"" + o.y + "\" x2=\"" + yEnd.x + "\" y2=\"" + yEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.48\"/>",
+          "<line x1=\"" + originSurface.x + "\" y1=\"" + originSurface.y + "\" x2=\"" + zEnd.x + "\" y2=\"" + zEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.38\"/>",
+          "<text x=\"" + (xEnd.x + 8) + "\" y=\"" + (xEnd.y + 4) + "\" fill=\"#555\" font-size=\"12\">w1</text>",
+          "<text x=\"" + (yEnd.x - 8) + "\" y=\"" + (yEnd.y + 14) + "\" text-anchor=\"end\" fill=\"#555\" font-size=\"12\">w2</text>",
+          "<text x=\"" + (zEnd.x + 8) + "\" y=\"" + (zEnd.y + 4) + "\" fill=\"#555\" font-size=\"12\">loss</text>"
+        ].join("");
+      }
+
+      function pathFrom(points, cfg) {
+        return points.map((point, index) => {
+          const p = project(point.x, point.y, point.z, cfg);
+          return (index === 0 ? "M " : "L ") + p.x.toFixed(2) + " " + p.y.toFixed(2);
+        }).join(" ");
+      }
+
+      function placeDot(dot, label, point, lossFn, cfg, dx, dy) {
+        const z = point.z === undefined ? lossFn(point.x, point.y).value : point.z;
+        const p = project(point.x, point.y, z, cfg);
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+        if (label) {
+          label.setAttribute("x", p.x + dx);
+          label.setAttribute("y", p.y + dy);
+        }
+      }
+
+      function render() {
+        const lr = Number(learningRate.value);
+        const count = Number(steps.value);
+        frame = Math.min(frame, count);
+        const trapPoints = simulate(trapLossGrad, trapStart, lr, count);
+        const plateauPoints = simulate(plateauLossGrad, plateauStart, lr, count);
+        const visibleTrapPoints = trapPoints.slice(0, frame + 1);
+        const visiblePlateauPoints = plateauPoints.slice(0, frame + 1);
+        const trapEnd = visibleTrapPoints[visibleTrapPoints.length - 1];
+        const plateauEnd = visiblePlateauPoints[visiblePlateauPoints.length - 1];
+        const trapGlobalLoss = trapLossGrad(trapGlobal.x, trapGlobal.y).value;
+        const trapLocalDistance = Math.hypot(trapEnd.x - trapLocal.x, trapEnd.y - trapLocal.y);
+        const plateauMoved = Math.hypot(plateauEnd.x - plateauStart.x, plateauEnd.y - plateauStart.y);
+        const distanceToDrop = Math.hypot(plateauEnd.x - plateauDrop.x, plateauEnd.y - plateauDrop.y);
+
+        learningRateValue.textContent = fmt(lr, 3);
+        stepsValue.textContent = String(count);
+
+        trap.path.setAttribute("d", pathFrom(visibleTrapPoints, trapProjection));
+        placeDot(trap.startDot, trap.startLabel, trapStart, trapLossGrad, trapProjection, 10, -10);
+        placeDot(trap.endDot, null, trapEnd, trapLossGrad, trapProjection, 0, 0);
+        placeDot(trap.localDot, trap.localLabel, trapLocal, trapLossGrad, trapProjection, 10, -10);
+        placeDot(trap.globalDot, trap.globalLabel, trapGlobal, trapLossGrad, trapProjection, 10, -10);
+
+        plateau.path.setAttribute("d", pathFrom(visiblePlateauPoints, plateauProjection));
+        placeDot(plateau.startDot, plateau.startLabel, plateauStart, plateauLossGrad, plateauProjection, 10, -10);
+        placeDot(plateau.endDot, plateau.endLabel, plateauEnd, plateauLossGrad, plateauProjection, 10, -10);
+        placeDot(plateau.dropDot, plateau.dropLabel, plateauDrop, plateauLossGrad, plateauProjection, 10, -10);
+
+        trapReadout.textContent = "step " + frame + " / " + count + " | loss " + fmt(trapEnd.z, 3) + " | big pit " + fmt(trapGlobalLoss, 3);
+        plateauReadout.textContent = "step " + frame + " / " + count + " | moved " + fmt(plateauMoved, 3) + " | grad " + fmt(plateauEnd.gradNorm, 4);
+
+        if (trapEnd.x > 0.1) {
+          trapStatus.textContent = "局部坑：学习率较大，轨迹已经跳向右侧大坑，但可能伴随震荡。";
+        } else if (trapLocalDistance < 0.16 && trapEnd.gradNorm < 0.03) {
+          trapStatus.textContent = "局部坑：GD 已经停在左侧小坑附近，继续训练也很难去右侧大坑。";
+        } else {
+          trapStatus.textContent = "局部坑：GD 正在沿当前梯度下降，通常会先进入最近的小坑。";
+        }
+
+        if (distanceToDrop < 0.55) {
+          plateauStatus.textContent = "平地：已经接近平地上的最优坑；再训练会被坑吸进去。";
+        } else if (plateauEnd.x < -1.60) {
+          plateauStatus.textContent = "平地：GD 还在沿斜坡下降，梯度信号比较明显。";
+        } else {
+          plateauStatus.textContent = "平地：已经滑到平地附近，梯度很小，无法继续走到右侧最优坑。";
+        }
+      }
+
+      drawMesh(trap.mesh, trapLossGrad, trapProjection);
+      drawAxes(trap.axes, trapLossGrad, trapProjection);
+      drawMesh(plateau.mesh, plateauLossGrad, plateauProjection);
+      drawAxes(plateau.axes, plateauLossGrad, plateauProjection);
+      render();
+
+      window.setInterval(function () {
+        const count = Number(steps.value);
+        frame = frame >= count ? 0 : frame + 1;
+        render();
+      }, 95);
+
+      learningRate.addEventListener("input", function () {
+        frame = 0;
+        render();
+      });
+
+      steps.addEventListener("input", function () {
+        frame = 0;
+        render();
+      });
+    })();
+  </script>
+</body>
+</html>
