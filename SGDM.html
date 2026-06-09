@@ -565,7 +565,7 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
       <aside class="panel controls" aria-label="SGDM controls">
         <div class="algorithm">
           <h2>SGDM 算法</h2>
-          <p class="algorithm-summary">好处：使用动量减少震荡，加快下降速率。<br>坏处：对矩阵权重来说，SGDM 的更新可能集中在大方向上；到后期大方向已接近收敛，但小方向仍未充分优化，导致整体推进不均衡。Adam 的做法是用一阶矩和二阶矩做逐元素自适应缩放，让小方向也能获得更合适的更新尺度。</p>
+          <p class="algorithm-summary">好处：使用动量减少震荡，加快下降速率。<br>坏处：对矩阵权重来说，GD, SGD 和 SGDM 的更新可能集中在大方向上；到后期大方向已接近收敛，但小方向仍未充分优化，导致整体推进不均衡。Adam 的做法是用一阶矩和二阶矩做逐元素自适应缩放，让小方向也能获得更合适的更新尺度。</p>
           <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(B_t\)：第 \(t\) 步随机 mini-batch；\(g_t\)：mini-batch 梯度；\(v_t\)：动量项；\(\beta\)：动量系数；\(\eta\)：学习率。</p>
           <div class="formula">\[
 \begin{aligned}
@@ -626,7 +626,7 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例 2：SGDM 存在大方向过度训练的问题</h2>
+            <h2>例 2：GD, SGD 和 SGDM 都会过多训练大方向, 过少训练小方向</h2>
             <div class="readout" id="sgdmReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdmStatus">矩阵方向：正在计算</div>
