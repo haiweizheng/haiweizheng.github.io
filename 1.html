@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gradient Descent Failure Cases</title>
+  <title>GD, SGD, SGDM 的优缺点</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/contrib/auto-render.min.js"></script>
@@ -184,15 +184,11 @@
       font-size: 1.08em;
     }
 
-    .formula-title {
-      margin: 8px 0 5px;
+    .symbol-note {
+      margin: 0;
       color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
-    }
-
-    .formula-title:first-of-type {
-      margin-top: 0;
+      line-height: 1.55;
     }
 
     label {
@@ -314,16 +310,21 @@
 <body>
   <main>
     <header>
-      <h1>Gradient Descent (GD)</h1>
-      <p class="subtitle">普通 GD 只根据当前位置的梯度走下一步。下面两张图会自动循环播放：一个展示 GD 掉进左边小坑后出不来，另一个展示它从斜坡滑到平地后，因为梯度太小而走不到远处的最优坑。</p>
+      <h1>GD, SGD, SGDM 的优缺点</h1>
+      <p class="subtitle">坏处：难以避免非凸优化中局部最小值和平坦区域的影响。</p>
     </header>
 
     <section class="workspace">
       <aside class="panel controls" aria-label="GD controls">
         <div class="algorithm">
           <h2>GD 算法</h2>
-          <div class="formula-title">数学公式</div>
-          <div class="formula">\[\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)\]</div>
+          <div class="formula">\[
+\begin{aligned}
+g_t &= \nabla_\theta \mathcal{L}(\theta_t;\mathcal{Data}) \\
+\theta_{t+1} &= \theta_t - \eta g_t
+\end{aligned}
+\]</div>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(\mathcal{L}\)：损失函数；\(g_t\)：完整数据上的梯度；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
@@ -347,7 +348,7 @@
       <section class="plots">
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子一：局部最小值坑</h2>
+            <h2>GD 的问题 1：局部最小值</h2>
             <div class="readout" id="trapReadout">step 0 / 90</div>
           </div>
           <div class="example-status" id="trapStatus">局部坑：正在计算</div>
@@ -378,7 +379,7 @@
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子二：斜坡到平地后走不动</h2>
+            <h2>GD 的问题 2：平坦区域停滞</h2>
             <div class="readout" id="plateauReadout">step 0 / 90</div>
           </div>
           <div class="example-status" id="plateauStatus">平地：正在计算</div>
@@ -410,15 +411,21 @@
 
     <section class="topic-header">
       <h2>Stochastic Gradient Descent (SGD)</h2>
-      <p>SGD 每一步只看一个随机 mini-batch 的梯度，所以它比完整 GD 更便宜；mini-batch 带来的随机噪音有时能把路径推出浅坑，也可能让它穿过平地继续找到更低的坑。但在狭长山谷里，它会沿高曲率方向来回震荡，这正是后面引入 SGDM 的动机。</p>
+      <p>好处：① 每一步只看一个随机 mini-batch 的梯度，所以它比完整 GD 更便宜；mini-batch 带来的随机噪音能减少局部最小值和平坦区域的影响。<br>坏处：在狭长山谷里，它会沿高曲率方向来回震荡。</p>
     </section>
 
     <section class="workspace">
       <aside class="panel controls" aria-label="SGD controls">
         <div class="algorithm">
           <h2>SGD 算法</h2>
-          <div class="formula-title">数学公式</div>
-          <div class="formula">\[\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t; B_t)\]</div>
+          <div class="formula">\[
+\begin{aligned}
+B_t &\sim \operatorname{MiniBatch}(\mathcal{Data}) \\
+g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
+\theta_{t+1} &= \theta_t - \eta g_t
+\end{aligned}
+\]</div>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(B_t\)：第 \(t\) 步随机 mini-batch；\(\mathcal{L}\)：损失函数；\(g_t\)：mini-batch 梯度；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
@@ -544,13 +551,15 @@
       <aside class="panel controls" aria-label="SGDM controls">
         <div class="algorithm">
           <h2>SGDM 算法</h2>
-          <div class="formula-title">数学公式</div>
           <div class="formula">\[
 \begin{aligned}
-v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
+B_t &\sim \operatorname{MiniBatch}(\mathcal{Data}) \\
+g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
+v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
 \theta_{t+1} &= \theta_t - \eta v_{t+1}
 \end{aligned}
 \]</div>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(B_t\)：第 \(t\) 步随机 mini-batch；\(g_t\)：mini-batch 梯度；\(v_t\)：动量/速度项；\(\beta\)：动量系数；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
@@ -618,6 +627,7 @@ v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
               </marker>
             </defs>
             <g id="sgdmMesh"></g>
+            <path id="sgdmWeakResidualPath" fill="none" stroke="var(--momentum-path)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="7 7" opacity="0.62"></path>
             <path id="sgdmSgdPath" fill="none" stroke="var(--momentum-path)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.78" marker-end="url(#sgdmSgdArrow)"></path>
             <path id="sgdmPath" fill="none" stroke="var(--muon-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdmArrow)"></path>
             <circle id="sgdmStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
@@ -625,17 +635,17 @@ v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
             <circle id="sgdmWeakDot" r="6.5" fill="var(--momentum-path)" stroke="#fff" stroke-width="2"></circle>
             <circle id="sgdmOptDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
             <text id="sgdmStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
-            <text id="sgdmWeakLabel" fill="var(--momentum-path)" font-size="13" font-weight="700">weak mode</text>
+            <text id="sgdmWeakLabel" fill="var(--momentum-path)" font-size="13" font-weight="700">residual</text>
             <text id="sgdmOptLabel" fill="var(--global)" font-size="13" font-weight="700">optimum</text>
           </svg>
           <div class="legend">
             <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM path</span>
             <span><i class="swatch" style="background: var(--muon-path)"></i>Muon path</span>
-            <span><i class="swatch" style="background: var(--momentum-path)"></i>弱方向残留</span>
+            <span><i class="swatch" style="background: var(--momentum-path)"></i>弱方向残差</span>
             <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
             <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
           </div>
-          <p class="note">这个 toy 图把矩阵更新拆成两个奇异方向。SGDM 直接使用 momentum，更新容易被主方向支配，弱方向推进慢；Muon 对 momentum 矩阵做 Newton-Schulz 近似正交化，让多个矩阵方向的更新强度更接近，因此路径更直接。</p>
+          <p class="note">这个 toy 图把矩阵更新拆成两个奇异方向，只展示更新方向分配，不模拟完整轨迹。SGDM 直接使用 momentum，容易把更新集中到主方向，留下弱方向残差；Muon 对 momentum 矩阵做 Newton-Schulz 近似正交化，让多个矩阵方向的更新强度更接近。</p>
         </article>
       </section>
     </section>
@@ -990,6 +1000,7 @@ v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
 
       const sgdmPlot = {
         mesh: document.getElementById("sgdmMesh"),
+        residualPath: document.getElementById("sgdmWeakResidualPath"),
         sgdPath: document.getElementById("sgdmSgdPath"),
         path: document.getElementById("sgdmPath"),
         startDot: document.getElementById("sgdmStartDot"),
@@ -1553,11 +1564,19 @@ v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
         sgdValleyDot(sgdmContourPlot.endDot, null, momentumEnd, 0, 0);
         sgdValleyDot(sgdmContourPlot.optDot, sgdmContourPlot.optLabel, valleyOptimum, 10, -10);
 
-        sgdmPlot.sgdPath.setAttribute("d", sgdValleyPathFrom(visibleMatrixSgdm));
-        sgdmPlot.path.setAttribute("d", sgdValleyPathFrom(visibleMuon));
+        sgdmPlot.sgdPath.setAttribute("d", sgdValleyPathFrom([matrixStart, matrixSgdmEnd]));
+        sgdmPlot.path.setAttribute("d", sgdValleyPathFrom([matrixStart, muonEnd]));
+        const matrixResidualTarget = { x: matrixSgdmEnd.x, y: matrixOptimum.y };
+        sgdmPlot.residualPath.setAttribute("d", sgdValleyPathFrom([matrixSgdmEnd, matrixResidualTarget]));
         sgdValleyDot(sgdmPlot.startDot, sgdmPlot.startLabel, matrixStart, 10, -10);
         sgdValleyDot(sgdmPlot.endDot, null, muonEnd, 0, 0);
-        sgdValleyDot(sgdmPlot.weakDot, sgdmPlot.weakLabel, matrixSgdmEnd, 10, 18);
+        sgdValleyDot(sgdmPlot.weakDot, null, matrixSgdmEnd, 0, 0);
+        const residualMid = sgdValleyProject(
+          (matrixSgdmEnd.x + matrixResidualTarget.x) / 2,
+          (matrixSgdmEnd.y + matrixResidualTarget.y) / 2
+        );
+        sgdmPlot.weakLabel.setAttribute("x", residualMid.x + 10);
+        sgdmPlot.weakLabel.setAttribute("y", residualMid.y + 4);
         sgdValleyDot(sgdmPlot.optDot, sgdmPlot.optLabel, matrixOptimum, 10, -10);
 
         noiseReadout.textContent = "step " + frame + " / " + count + " | SGD big " + fmt(noiseDistance, 3) + " | GD big " + fmt(noiseGdDistance, 3);
@@ -1646,7 +1665,7 @@ v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
         return;
       }
 
-      document.querySelectorAll(".formula").forEach(function (element) {
+      document.querySelectorAll(".formula, .symbol-note").forEach(function (element) {
         window.renderMathInElement(element, {
           delimiters: [
             { left: "\\[", right: "\\]", display: true },
