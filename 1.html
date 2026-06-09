@@ -20,7 +20,8 @@
       --gd-path: #747b84;
       --sgd-path: #b842c2;
       --momentum-path: #0f8b8d;
-      --muon-path: #2563eb;
+      --adam-main: #4f46e5;
+      --adam-path: #2563eb;
       --global: #147f74;
       --local: #6b58d3;
       --shadow: 0 18px 45px rgba(31, 43, 58, 0.08);
@@ -159,6 +160,13 @@
       line-height: 1.2;
     }
 
+    .algorithm-summary {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
     .formula {
       margin: 0 0 8px;
       padding: 8px 10px;
@@ -185,7 +193,7 @@
     }
 
     .symbol-note {
-      margin: 0;
+      margin: 0 0 8px;
       color: var(--muted);
       font-size: 12px;
       line-height: 1.55;
@@ -287,6 +295,18 @@
       border-radius: 999px;
     }
 
+    .line-key {
+      display: inline-block;
+      width: 30px;
+      height: 0;
+      border-top: 3px solid currentColor;
+      border-radius: 999px;
+    }
+
+    .line-key.dashed {
+      border-top-style: dashed;
+    }
+
     .note {
       margin: 10px 0 0;
       color: var(--muted);
@@ -311,31 +331,31 @@
   <main>
     <header>
       <h1>GD, SGD, SGDM 的优缺点</h1>
-      <p class="subtitle">坏处：难以避免非凸优化中局部最小值和平坦区域的影响。</p>
     </header>
 
     <section class="workspace">
       <aside class="panel controls" aria-label="GD controls">
         <div class="algorithm">
           <h2>GD 算法</h2>
+          <p class="algorithm-summary">坏处：难以避免非凸优化中局部极小值和平坦区域的影响。</p>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(\mathcal{L}\)：损失函数；\(g_t\)：完整数据上的梯度；\(\eta\)：学习率。</p>
           <div class="formula">\[
 \begin{aligned}
 g_t &= \nabla_\theta \mathcal{L}(\theta_t;\mathcal{Data}) \\
 \theta_{t+1} &= \theta_t - \eta g_t
 \end{aligned}
 \]</div>
-          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(\mathcal{L}\)：损失函数；\(g_t\)：完整数据上的梯度；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
           <div class="control">
-            <label for="learningRate">学习率 <output id="learningRateValue">0.055</output></label>
-            <input id="learningRate" type="range" min="0.005" max="0.16" step="0.005" value="0.055">
+            <label for="learningRate">学习率 <output id="learningRateValue">0.080</output></label>
+            <input id="learningRate" type="range" min="0.005" max="0.16" step="0.005" value="0.08">
           </div>
 
           <div class="control">
-            <label for="steps">训练次数 <output id="stepsValue">90</output></label>
-            <input id="steps" type="range" min="1" max="220" step="1" value="90">
+            <label for="steps">迭代步数 <output id="stepsValue">45</output></label>
+            <input id="steps" type="range" min="1" max="220" step="1" value="45">
           </div>
 
           <div class="control-actions">
@@ -348,8 +368,8 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;\mathcal{Data}) \\
       <section class="plots">
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>GD 的问题 1：局部最小值</h2>
-            <div class="readout" id="trapReadout">step 0 / 90</div>
+            <h2>例 1：局部极小值</h2>
+            <div class="readout" id="trapReadout">step 0 / 45</div>
           </div>
           <div class="example-status" id="trapStatus">局部坑：正在计算</div>
           <svg id="trapSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent trapped in a local minimum">
@@ -371,16 +391,16 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;\mathcal{Data}) \\
           </svg>
           <div class="legend">
             <span><i class="swatch" style="background: var(--path)"></i>GD path</span>
-            <span><i class="swatch" style="background: var(--local)"></i>小坑</span>
-            <span><i class="swatch" style="background: var(--global)"></i>大坑</span>
+            <span><i class="swatch" style="background: #202124"></i>起点</span>
+            <span><i class="swatch" style="background: var(--local)"></i>局部极小值</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
           </div>
-          <p class="note">默认设置下，GD 会停在左侧小坑。右侧大坑更低，但从当前起点出发时，普通 GD 只会沿着眼前的坡度进入最近的坑。</p>
         </article>
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>GD 的问题 2：平坦区域停滞</h2>
-            <div class="readout" id="plateauReadout">step 0 / 90</div>
+            <h2>例 2：平坦区域停滞</h2>
+            <div class="readout" id="plateauReadout">step 0 / 45</div>
           </div>
           <div class="example-status" id="plateauStatus">平地：正在计算</div>
           <svg id="plateauSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent sliding down to a flat plateau and missing the best pit">
@@ -402,22 +422,22 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;\mathcal{Data}) \\
           <div class="legend">
             <span><i class="swatch" style="background: var(--path)"></i>GD path</span>
             <span><i class="swatch" style="background: #202124"></i>起点</span>
-            <span><i class="swatch" style="background: var(--global)"></i>平地上的最优坑</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
           </div>
-          <p class="note">这里的路径会先从斜坡下降到近似平地。平地远处有一个更低的坑，但当前位置附近几乎没有坡度，GD 没有足够信号继续走过去。</p>
         </article>
       </section>
     </section>
 
     <section class="topic-header">
       <h2>Stochastic Gradient Descent (SGD)</h2>
-      <p>好处：① 每一步只看一个随机 mini-batch 的梯度，所以它比完整 GD 更便宜；mini-batch 带来的随机噪音能减少局部最小值和平坦区域的影响。<br>坏处：在狭长山谷里，它会沿高曲率方向来回震荡。</p>
     </section>
 
     <section class="workspace">
       <aside class="panel controls" aria-label="SGD controls">
         <div class="algorithm">
           <h2>SGD 算法</h2>
+          <p class="algorithm-summary">好处：① 每一步只看一个随机 mini-batch 的梯度，所以它比完整 GD 更便宜；② mini-batch 带来的随机噪音能减少局部极小值和平坦区域的影响。<br>坏处：在狭长山谷里，它会沿高曲率方向来回震荡。</p>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(B_t\)：第 \(t\) 步随机 mini-batch；\(\mathcal{L}\)：损失函数；\(g_t\)：mini-batch 梯度；\(\eta\)：学习率。</p>
           <div class="formula">\[
 \begin{aligned}
 B_t &\sim \operatorname{MiniBatch}(\mathcal{Data}) \\
@@ -425,7 +445,6 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
 \theta_{t+1} &= \theta_t - \eta g_t
 \end{aligned}
 \]</div>
-          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(\mathcal{Data}\)：完整训练数据；\(B_t\)：第 \(t\) 步随机 mini-batch；\(\mathcal{L}\)：损失函数；\(g_t\)：mini-batch 梯度；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
@@ -435,8 +454,8 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
           </div>
 
           <div class="control">
-            <label for="sgdSteps">训练次数 <output id="sgdStepsValue">80</output></label>
-            <input id="sgdSteps" type="range" min="1" max="180" step="1" value="80">
+            <label for="sgdSteps">迭代步数 <output id="sgdStepsValue">55</output></label>
+            <input id="sgdSteps" type="range" min="1" max="180" step="1" value="55">
           </div>
 
           <div class="control-actions">
@@ -449,8 +468,8 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
       <section class="plots">
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子一：随机噪音向量跳出小坑</h2>
-            <div class="readout" id="sgdNoiseReadout">step 0 / 80</div>
+            <h2>例 1：噪音抖动带离局部极小值</h2>
+            <div class="readout" id="sgdNoiseReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdNoiseStatus">噪音向量：正在计算</div>
           <svg id="sgdNoiseSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing stochastic mini-batch noise escaping a shallow pit">
@@ -475,16 +494,15 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
           <div class="legend">
             <span><i class="swatch" style="background: var(--gd-path)"></i>GD path</span>
             <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
-            <span><i class="swatch" style="background: var(--local)"></i>小坑</span>
-            <span><i class="swatch" style="background: var(--global)"></i>大坑</span>
+            <span><i class="swatch" style="background: var(--local)"></i>局部极小值</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
           </div>
-          <p class="note">同一个非凸地形里，灰色 GD 容易停在左侧小坑；SGD 的 mini-batch 梯度里会混入随机噪音向量，某些 batch 会把路径推出浅坑，最后滑向右侧更深的大坑。</p>
         </article>
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子二：SGD 穿过平地到达最优坑</h2>
-            <div class="readout" id="sgdPlateauReadout">step 0 / 80</div>
+            <h2>例 2：噪音抖动带离平坦区域</h2>
+            <div class="readout" id="sgdPlateauReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdPlateauStatus">平地：正在计算</div>
           <svg id="sgdPlateauSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing SGD crossing a flat plateau to reach the best pit">
@@ -507,15 +525,14 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
           <div class="legend">
             <span><i class="swatch" style="background: var(--gd-path)"></i>GD path</span>
             <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
-            <span><i class="swatch" style="background: var(--global)"></i>平地上的最优坑</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
           </div>
-          <p class="note">同样是从斜坡滑到平地，GD 会停在灰色终点附近；SGD 的 mini-batch 噪音在平地上提供额外扰动，路径有机会继续穿过平地并进入右侧更低的坑。</p>
         </article>
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子三：狭长山谷里下降不顺</h2>
-            <div class="readout" id="sgdValleyReadout">step 0 / 80</div>
+            <h2>例 3：SGD 不同方向对应的梯度差别过大时, 噪音会造成大方向上的震荡</h2>
+            <div class="readout" id="sgdValleyReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdValleyStatus">山谷：正在计算</div>
           <svg id="sgdValleySvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot showing SGD zigzagging in a horizontal narrow valley">
@@ -534,9 +551,7 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
           </svg>
           <div class="legend">
             <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
-            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
           </div>
-          <p class="note">山谷横向放置，左边是低损失的最优点，右边更高。SGD 从右侧出发，会沿狭长谷底向左下降，但在上下陡峭方向反复横跳，推进不够顺。</p>
         </article>
 
       </section>
@@ -544,13 +559,14 @@ g_t &= \nabla_\theta \mathcal{L}(\theta_t;B_t) \\
 
     <section class="topic-header">
       <h2>SGD with Momentum (SGDM)</h2>
-      <p>SGDM 在 SGD 的基础上加入 velocity，把过去的更新方向保留下来。它可以减少狭长山谷里的上下震荡；但对矩阵权重来说，SGDM 仍然直接使用原始动量矩阵，更新可能被某个主奇异方向支配。Muon 会把 momentum 矩阵正交化，让矩阵更新方向更均衡。</p>
     </section>
 
     <section class="workspace">
       <aside class="panel controls" aria-label="SGDM controls">
         <div class="algorithm">
           <h2>SGDM 算法</h2>
+          <p class="algorithm-summary">好处：使用动量减少震荡，加快下降速率。<br>坏处：对矩阵权重来说，SGDM 的更新可能集中在大方向上；到后期大方向已接近收敛，但小方向仍未充分优化，导致整体推进不均衡。Adam 的做法是用一阶矩和二阶矩做逐元素自适应缩放，让小方向也能获得更合适的更新尺度。</p>
+          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(B_t\)：第 \(t\) 步随机 mini-batch；\(g_t\)：mini-batch 梯度；\(v_t\)：动量项；\(\beta\)：动量系数；\(\eta\)：学习率。</p>
           <div class="formula">\[
 \begin{aligned}
 B_t &\sim \operatorname{MiniBatch}(\mathcal{Data}) \\
@@ -559,18 +575,17 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
 \theta_{t+1} &= \theta_t - \eta v_{t+1}
 \end{aligned}
 \]</div>
-          <p class="symbol-note">\(\theta_t\)：第 \(t\) 步参数；\(B_t\)：第 \(t\) 步随机 mini-batch；\(g_t\)：mini-batch 梯度；\(v_t\)：动量/速度项；\(\beta\)：动量系数；\(\eta\)：学习率。</p>
         </div>
 
         <div class="control-grid">
           <div class="control">
-            <label for="sgdmLearningRateMirror">学习率 <output id="sgdmLearningRateMirror">0.100</output></label>
-            <input type="range" min="0.02" max="0.16" step="0.005" value="0.10" disabled>
+            <label for="sgdmLearningRate">学习率 <output id="sgdmLearningRateValue">0.100</output></label>
+            <input id="sgdmLearningRate" type="range" min="0.02" max="0.16" step="0.005" value="0.10">
           </div>
 
           <div class="control">
-            <label for="sgdmBeta">beta <output id="sgdmBeta">0.88</output></label>
-            <input type="range" min="0" max="0.99" step="0.01" value="0.88" disabled>
+            <label for="sgdmBeta">beta <output id="sgdmBetaValue">0.88</output></label>
+            <input id="sgdmBeta" type="range" min="0" max="0.99" step="0.01" value="0.88">
           </div>
         </div>
 
@@ -579,8 +594,8 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       <section class="plots">
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子一：等高线看动量</h2>
-            <div class="readout" id="sgdmContourReadout">step 0 / 80</div>
+            <h2>例 1：SGDM 动量效果</h2>
+            <div class="readout" id="sgdmContourReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdmContourStatus">等高线：正在计算</div>
           <svg id="sgdmContourSvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot comparing SGD and SGDM in a horizontal narrow valley">
@@ -604,48 +619,42 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
           </svg>
           <div class="legend">
             <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD</span>
-            <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM beta=0.88</span>
+            <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM</span>
             <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
-            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
           </div>
-          <p class="note">这张图沿用横向地理等高线，只保留浅灰地形线。SGD 会在上下陡峭方向反复摆动；SGDM 抵消上下震荡，把持续向左的谷底方向累积起来。</p>
         </article>
 
         <article class="panel plot-card">
           <div class="plot-head">
-            <h2>例子二：矩阵方向不均衡</h2>
-            <div class="readout" id="sgdmReadout">step 0 / 80</div>
+            <h2>例 2：SGDM 存在大方向过度训练的问题</h2>
+            <div class="readout" id="sgdmReadout">step 0 / 55</div>
           </div>
           <div class="example-status" id="sgdmStatus">矩阵方向：正在计算</div>
-          <svg id="sgdmSvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot comparing SGDM and Muon on matrix update imbalance">
-            <defs>
-              <marker id="sgdmSgdArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-                <path d="M0,0 L0,6 L8,3 z" fill="var(--momentum-path)"></path>
-              </marker>
-              <marker id="sgdmArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-                <path d="M0,0 L0,6 L8,3 z" fill="var(--muon-path)"></path>
-              </marker>
-            </defs>
-            <g id="sgdmMesh"></g>
-            <path id="sgdmWeakResidualPath" fill="none" stroke="var(--momentum-path)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="7 7" opacity="0.62"></path>
-            <path id="sgdmSgdPath" fill="none" stroke="var(--momentum-path)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.78" marker-end="url(#sgdmSgdArrow)"></path>
-            <path id="sgdmPath" fill="none" stroke="var(--muon-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdmArrow)"></path>
-            <circle id="sgdmStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
-            <circle id="sgdmEndDot" r="6.8" fill="var(--muon-path)" stroke="#fff" stroke-width="2"></circle>
-            <circle id="sgdmWeakDot" r="6.5" fill="var(--momentum-path)" stroke="#fff" stroke-width="2"></circle>
-            <circle id="sgdmOptDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
-            <text id="sgdmStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
-            <text id="sgdmWeakLabel" fill="var(--momentum-path)" font-size="13" font-weight="700">residual</text>
-            <text id="sgdmOptLabel" fill="var(--global)" font-size="13" font-weight="700">optimum</text>
+          <svg id="sgdmSvg" viewBox="0 0 880 540" role="img" aria-label="Residual curves showing the dominant direction is trained while the small direction remains undertrained">
+            <g id="sgdmModeFrame"></g>
+            <path id="sgdmMainCurve" fill="none" stroke="var(--global)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path id="sgdmSmallCurve" fill="none" stroke="var(--momentum-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="10 7"></path>
+            <path id="adamMainCurve" fill="none" stroke="var(--adam-main)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 6"></path>
+            <path id="adamSmallCurve" fill="none" stroke="var(--adam-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <circle id="sgdmMainDot" r="6.2" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmSmallDot" r="6.8" fill="var(--momentum-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="adamMainDot" r="6.8" fill="var(--adam-main)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="adamSmallDot" r="6.8" fill="var(--adam-path)" stroke="#fff" stroke-width="2"></circle>
+            <rect id="sgdmMainBar" rx="5" fill="var(--global)" opacity="0.82"></rect>
+            <rect id="sgdmSmallBar" rx="5" fill="var(--momentum-path)" opacity="0.82"></rect>
+            <rect id="adamMainBar" rx="5" fill="var(--adam-main)" opacity="0.82"></rect>
+            <rect id="adamSmallBar" rx="5" fill="var(--adam-path)" opacity="0.82"></rect>
+            <text id="sgdmMainValue" fill="var(--global)" font-size="13" font-weight="800" text-anchor="middle"></text>
+            <text id="sgdmSmallValue" fill="var(--momentum-path)" font-size="13" font-weight="800" text-anchor="middle"></text>
+            <text id="adamMainValue" fill="var(--adam-main)" font-size="13" font-weight="800" text-anchor="middle"></text>
+            <text id="adamSmallValue" fill="var(--adam-path)" font-size="13" font-weight="800" text-anchor="middle"></text>
           </svg>
           <div class="legend">
-            <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM path</span>
-            <span><i class="swatch" style="background: var(--muon-path)"></i>Muon path</span>
-            <span><i class="swatch" style="background: var(--momentum-path)"></i>弱方向残差</span>
-            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
-            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
+            <span style="color: var(--global)"><i class="line-key"></i>SGDM 大方向</span>
+            <span style="color: var(--momentum-path)"><i class="line-key dashed"></i>SGDM 小方向</span>
+            <span style="color: var(--adam-main)"><i class="line-key dashed"></i>Adam 大方向</span>
+            <span style="color: var(--adam-path)"><i class="line-key"></i>Adam 小方向</span>
           </div>
-          <p class="note">这个 toy 图把矩阵更新拆成两个奇异方向，只展示更新方向分配，不模拟完整轨迹。SGDM 直接使用 momentum，容易把更新集中到主方向，留下弱方向残差；Muon 对 momentum 矩阵做 Newton-Schulz 近似正交化，让多个矩阵方向的更新强度更接近。</p>
         </article>
       </section>
     </section>
@@ -936,7 +945,10 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       const resetButton = document.getElementById("sgdReset");
       const learningRateValue = document.getElementById("sgdLearningRateValue");
       const stepsValue = document.getElementById("sgdStepsValue");
-      const sgdmLearningRateMirror = document.getElementById("sgdmLearningRateMirror");
+      const sgdmLearningRate = document.getElementById("sgdmLearningRate");
+      const sgdmLearningRateValue = document.getElementById("sgdmLearningRateValue");
+      const sgdmBeta = document.getElementById("sgdmBeta");
+      const sgdmBetaValue = document.getElementById("sgdmBetaValue");
       const noiseReadout = document.getElementById("sgdNoiseReadout");
       const sgdPlateauReadout = document.getElementById("sgdPlateauReadout");
       const valleyReadout = document.getElementById("sgdValleyReadout");
@@ -999,23 +1011,28 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       };
 
       const sgdmPlot = {
-        mesh: document.getElementById("sgdmMesh"),
-        residualPath: document.getElementById("sgdmWeakResidualPath"),
-        sgdPath: document.getElementById("sgdmSgdPath"),
-        path: document.getElementById("sgdmPath"),
-        startDot: document.getElementById("sgdmStartDot"),
-        endDot: document.getElementById("sgdmEndDot"),
-        weakDot: document.getElementById("sgdmWeakDot"),
-        optDot: document.getElementById("sgdmOptDot"),
-        startLabel: document.getElementById("sgdmStartLabel"),
-        weakLabel: document.getElementById("sgdmWeakLabel"),
-        optLabel: document.getElementById("sgdmOptLabel")
+        frame: document.getElementById("sgdmModeFrame"),
+        mainCurve: document.getElementById("sgdmMainCurve"),
+        smallCurve: document.getElementById("sgdmSmallCurve"),
+        adamMainCurve: document.getElementById("adamMainCurve"),
+        adamSmallCurve: document.getElementById("adamSmallCurve"),
+        mainDot: document.getElementById("sgdmMainDot"),
+        smallDot: document.getElementById("sgdmSmallDot"),
+        adamMainDot: document.getElementById("adamMainDot"),
+        adamSmallDot: document.getElementById("adamSmallDot"),
+        mainBar: document.getElementById("sgdmMainBar"),
+        smallBar: document.getElementById("sgdmSmallBar"),
+        adamMainBar: document.getElementById("adamMainBar"),
+        adamSmallBar: document.getElementById("adamSmallBar"),
+        mainValue: document.getElementById("sgdmMainValue"),
+        smallValue: document.getElementById("sgdmSmallValue"),
+        adamMainValue: document.getElementById("adamMainValue"),
+        adamSmallValue: document.getElementById("adamSmallValue")
       };
 
       const noiseBounds = { xmin: -3.35, xmax: 3.35, ymin: -2.65, ymax: 2.65 };
       const sgdPlateauBounds = { xmin: -3.35, xmax: 3.35, ymin: -2.65, ymax: 2.65 };
       const valleyBounds = { xmin: -2.5, xmax: 2.5, ymin: -1.4, ymax: 1.4 };
-      const matrixBounds = { xmin: -2.5, xmax: 2.5, ymin: -1.4, ymax: 1.4 };
       const noiseStart = { x: -2.65, y: 1.45 };
       const noiseLocal = { x: -1.391672, y: 0.57314 };
       const noiseOptimum = { x: 1.460249, y: -0.277959 };
@@ -1023,8 +1040,6 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       const sgdPlateauDrop = { x: 1.05, y: -0.12 };
       const valleyStart = { x: 2.0, y: 0.85 };
       const valleyOptimum = { x: -1.65, y: 0 };
-      const matrixStart = { x: 2.10, y: 1.00 };
-      const matrixOptimum = { x: 0, y: 0 };
       const valleyAxis = { x: 1, y: 0 };
       const valleyCross = { x: -valleyAxis.y, y: valleyAxis.x };
       const valleyCurvature = { along: 0.12, cross: 18 };
@@ -1057,6 +1072,19 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         xmax: 2.5,
         ymin: -1.4,
         ymax: 1.4
+      };
+
+      const modeProjection = {
+        left: 76,
+        right: 560,
+        top: 72,
+        bottom: 440,
+        ymin: 0,
+        ymax: 1.05,
+        barBase: 440,
+        barTop: 160,
+        barWidth: 42,
+        barX: [608, 672, 736, 800]
       };
 
       function clamp(value, min, max) {
@@ -1133,18 +1161,6 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
           gx: valleyCurvature.along * along * valleyAxis.x + valleyCurvature.cross * cross * valleyCross.x,
           gy: valleyCurvature.along * along * valleyAxis.y + valleyCurvature.cross * cross * valleyCross.y,
           cross
-        };
-      }
-
-      function matrixModeLossGrad(x, y) {
-        const dx = x - matrixOptimum.x;
-        const dy = y - matrixOptimum.y;
-
-        return {
-          value: 0.5 * (dx * dx + dy * dy),
-          gx: dx,
-          gy: dy,
-          cross: dy
         };
       }
 
@@ -1253,58 +1269,26 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         return points;
       }
 
-      function simulateMatrixSGDM(start, lr, count, bounds, beta) {
+      function simulateModeResiduals(lr, count, beta) {
         const points = [];
-        let x = start.x;
-        let y = start.y;
-        let vx = 0;
-        let vy = 0;
+        const speed = clamp(lr / 0.10, 0.35, 1.75);
+        const total = Math.max(1, count);
+        const mainDominance = 1.15 + 0.65 * beta;
+        const smallFloor = 0.42 + 0.27 * beta;
 
         for (let i = 0; i <= count; i += 1) {
-          const current = matrixModeLossGrad(x, y);
-          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
-
-          if (i < count) {
-            const gx = current.gx;
-            const gy = 0.12 * current.gy;
-            vx = beta * vx + (1 - beta) * gx;
-            vy = beta * vy + (1 - beta) * gy;
-            x = clamp(x - lr * vx, bounds.xmin, bounds.xmax);
-            y = clamp(y - lr * vy, bounds.ymin, bounds.ymax);
-          }
-        }
-
-        return points;
-      }
-
-      function orthogonalizedComponent(value) {
-        const magnitude = Math.abs(value);
-        if (magnitude < 0.02) {
-          return value / 0.02;
-        }
-
-        return Math.sign(value);
-      }
-
-      function simulateMuonProxy(start, lr, count, bounds, beta) {
-        const points = [];
-        let x = start.x;
-        let y = start.y;
-        let vx = 0;
-        let vy = 0;
-
-        for (let i = 0; i <= count; i += 1) {
-          const current = matrixModeLossGrad(x, y);
-          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
-
-          if (i < count) {
-            const gx = current.gx;
-            const gy = 0.12 * current.gy;
-            vx = beta * vx + (1 - beta) * gx;
-            vy = beta * vy + (1 - beta) * gy;
-            x = clamp(x - lr * 0.65 * orthogonalizedComponent(vx), bounds.xmin, bounds.xmax);
-            y = clamp(y - lr * 0.65 * orthogonalizedComponent(vy), bounds.ymin, bounds.ymax);
-          }
+          const progress = clamp(i / total * speed, 0, 1);
+          const mainResidual = Math.pow(Math.max(0, 1 - mainDominance * progress), 2.2);
+          const smallResidual = smallFloor + (1 - smallFloor) * Math.pow(Math.max(0, 1 - progress), 0.75);
+          const adamMainResidual = Math.pow(Math.max(0, 1 - 1.22 * progress), 1.45);
+          const adamSmallResidual = Math.pow(Math.max(0, 1 - 1.12 * progress), 1.35);
+          points.push({
+            step: i,
+            main: mainResidual,
+            small: smallResidual,
+            adamMain: adamMainResidual,
+            adamSmall: adamSmallResidual
+          });
         }
 
         return points;
@@ -1369,6 +1353,44 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         }
       }
 
+      function modeProject(step, residual, count) {
+        const cfg = modeProjection;
+        const total = Math.max(1, count);
+        return {
+          x: cfg.left + step / total * (cfg.right - cfg.left),
+          y: cfg.bottom - (residual - cfg.ymin) / (cfg.ymax - cfg.ymin) * (cfg.bottom - cfg.top)
+        };
+      }
+
+      function modePathFrom(points, key, count) {
+        return points.map((point, index) => {
+          const p = modeProject(point.step, point[key], count);
+          return (index === 0 ? "M " : "L ") + p.x.toFixed(2) + " " + p.y.toFixed(2);
+        }).join(" ");
+      }
+
+      function modeDot(dot, point, key, count) {
+        const p = modeProject(point.step, point[key], count);
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+      }
+
+      function setModeBar(rect, valueText, value, index) {
+        const cfg = modeProjection;
+        const maxHeight = cfg.barBase - cfg.barTop;
+        const height = Math.max(3, value / cfg.ymax * maxHeight);
+        const x = cfg.barX[index] - cfg.barWidth / 2;
+        const y = cfg.barBase - height;
+
+        rect.setAttribute("x", x);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", cfg.barWidth);
+        rect.setAttribute("height", height);
+        valueText.setAttribute("x", cfg.barX[index]);
+        valueText.setAttribute("y", y - 8);
+        valueText.textContent = fmt(value, 3);
+      }
+
       function drawValleyContours(target) {
         const cfg = sgdValleyContourProjection;
         const levels = [0.08, 0.16, 0.27, 0.42, 0.62, 0.88, 1.20, 1.58, 2.04, 2.58, 3.20, 3.92, 4.74, 5.66, 6.70, 7.86];
@@ -1414,45 +1436,44 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         target.innerHTML = pieces.join("");
       }
 
-      function drawMatrixModeContours(target) {
-        const cfg = sgdValleyContourProjection;
-        const levels = [0.04, 0.08, 0.14, 0.22, 0.34, 0.50, 0.72, 1.00, 1.34, 1.74, 2.20, 2.72, 3.30];
+      function drawModeFrame(target) {
+        const cfg = modeProjection;
         const pieces = [];
-        const clipId = target.id + "Clip";
-
-        function contourLoop(level) {
-          const xRadius = Math.sqrt(2 * level);
-          const yRadius = Math.sqrt(2 * level);
-          const points = [];
-
-          for (let i = 0; i <= 180; i += 1) {
-            const theta = i / 180 * Math.PI * 2;
-            points.push({
-              x: matrixOptimum.x + xRadius * Math.cos(theta),
-              y: matrixOptimum.y + yRadius * Math.sin(theta)
-            });
-          }
-
-          return points;
-        }
-
-        function closedPath(points) {
-          return sgdValleyPathFrom(points) + " Z";
-        }
-
-        pieces.push("<defs><clipPath id=\"" + clipId + "\"><rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\"/></clipPath></defs>");
-        pieces.push("<g clip-path=\"url(#" + clipId + ")\">");
         pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"#fbfcff\"/>");
 
-        for (let levelIndex = 0; levelIndex < levels.length; levelIndex += 1) {
-          const major = levelIndex % 4 === 0;
-          pieces.push(
-            "<path d=\"" + closedPath(contourLoop(levels[levelIndex])) + "\" fill=\"none\" stroke=\"" + (major ? "#717982" : "#b6bdc7") + "\" stroke-width=\"" + (major ? "1.45" : "0.92") + "\" opacity=\"" + (major ? "0.62" : "0.46") + "\"/>"
-          );
+        for (const residual of [0, 0.25, 0.5, 0.75, 1.0]) {
+          const left = modeProject(0, residual, 1);
+          const right = modeProject(1, residual, 1);
+          pieces.push("<line x1=\"" + left.x + "\" y1=\"" + left.y + "\" x2=\"" + right.x + "\" y2=\"" + right.y + "\" stroke=\"#dfe4ec\" stroke-width=\"1\" opacity=\"0.76\"/>");
+          pieces.push("<text x=\"" + (cfg.left - 14) + "\" y=\"" + (left.y + 4) + "\" fill=\"#626976\" font-size=\"12\" text-anchor=\"end\">" + residual.toFixed(2) + "</text>");
         }
 
-        pieces.push("</g>");
+        for (const stepRatio of [0.25, 0.5, 0.75, 1.0]) {
+          const top = modeProject(stepRatio, cfg.ymax, 1);
+          const bottom = modeProject(stepRatio, cfg.ymin, 1);
+          pieces.push("<line x1=\"" + top.x + "\" y1=\"" + top.y + "\" x2=\"" + bottom.x + "\" y2=\"" + bottom.y + "\" stroke=\"#eef1f5\" stroke-width=\"1\"/>");
+        }
+
+        const origin = modeProject(0, 0, 1);
+        const xEnd = modeProject(1, 0, 1);
+        const yEnd = modeProject(0, cfg.ymax, 1);
+        const done = modeProject(0, 0.08, 1);
+        const doneEnd = modeProject(1, 0.08, 1);
+
+        pieces.push("<line x1=\"" + done.x + "\" y1=\"" + done.y + "\" x2=\"" + doneEnd.x + "\" y2=\"" + doneEnd.y + "\" stroke=\"#147f74\" stroke-width=\"1.6\" stroke-dasharray=\"6 6\" opacity=\"0.56\"/>");
+        pieces.push("<text x=\"" + (doneEnd.x - 4) + "\" y=\"" + (doneEnd.y - 8) + "\" fill=\"#147f74\" font-size=\"12\" font-weight=\"700\" text-anchor=\"end\">训练完成区</text>");
+        pieces.push("<line x1=\"" + origin.x + "\" y1=\"" + origin.y + "\" x2=\"" + xEnd.x + "\" y2=\"" + xEnd.y + "\" stroke=\"#202124\" stroke-width=\"1.5\" opacity=\"0.68\"/>");
+        pieces.push("<line x1=\"" + origin.x + "\" y1=\"" + origin.y + "\" x2=\"" + yEnd.x + "\" y2=\"" + yEnd.y + "\" stroke=\"#202124\" stroke-width=\"1.5\" opacity=\"0.68\"/>");
+        pieces.push("<text x=\"" + (xEnd.x - 4) + "\" y=\"" + (xEnd.y + 28) + "\" fill=\"#454b54\" font-size=\"13\" font-weight=\"700\" text-anchor=\"end\">迭代步数</text>");
+        pieces.push("<text x=\"" + (yEnd.x + 10) + "\" y=\"" + (yEnd.y + 16) + "\" fill=\"#454b54\" font-size=\"13\" font-weight=\"700\">未训练残差</text>");
         pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"none\" stroke=\"#202124\" stroke-width=\"1\" opacity=\"0.22\"/>");
+        pieces.push("<text x=\"720\" y=\"114\" fill=\"#454b54\" font-size=\"14\" font-weight=\"800\" text-anchor=\"middle\">当前残差</text>");
+        pieces.push("<line x1=\"580\" y1=\"" + cfg.barBase + "\" x2=\"836\" y2=\"" + cfg.barBase + "\" stroke=\"#202124\" stroke-width=\"1.2\" opacity=\"0.55\"/>");
+        pieces.push("<line x1=\"580\" y1=\"" + cfg.barTop + "\" x2=\"836\" y2=\"" + cfg.barTop + "\" stroke=\"#dfe4ec\" stroke-width=\"1\"/>");
+        pieces.push("<text x=\"" + cfg.barX[0] + "\" y=\"468\" fill=\"#626976\" font-size=\"12\" font-weight=\"700\" text-anchor=\"middle\"><tspan x=\"" + cfg.barX[0] + "\" dy=\"0\">SGDM</tspan><tspan x=\"" + cfg.barX[0] + "\" dy=\"15\">大方向</tspan></text>");
+        pieces.push("<text x=\"" + cfg.barX[1] + "\" y=\"468\" fill=\"#626976\" font-size=\"12\" font-weight=\"700\" text-anchor=\"middle\"><tspan x=\"" + cfg.barX[1] + "\" dy=\"0\">SGDM</tspan><tspan x=\"" + cfg.barX[1] + "\" dy=\"15\">小方向</tspan></text>");
+        pieces.push("<text x=\"" + cfg.barX[2] + "\" y=\"468\" fill=\"#626976\" font-size=\"12\" font-weight=\"700\" text-anchor=\"middle\"><tspan x=\"" + cfg.barX[2] + "\" dy=\"0\">Adam</tspan><tspan x=\"" + cfg.barX[2] + "\" dy=\"15\">大方向</tspan></text>");
+        pieces.push("<text x=\"" + cfg.barX[3] + "\" y=\"468\" fill=\"#626976\" font-size=\"12\" font-weight=\"700\" text-anchor=\"middle\"><tspan x=\"" + cfg.barX[3] + "\" dy=\"0\">Adam</tspan><tspan x=\"" + cfg.barX[3] + "\" dy=\"15\">小方向</tspan></text>");
 
         target.innerHTML = pieces.join("");
       }
@@ -1494,6 +1515,8 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
 
       function renderSGD() {
         const lr = Number(learningRate.value);
+        const sgdmLr = Number(sgdmLearningRate.value);
+        const beta = Number(sgdmBeta.value);
         const count = Number(steps.value);
         frame = Math.min(frame, count);
 
@@ -1502,39 +1525,38 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         const sgdPlateauGdPoints = simulateSGD(sgdPlateauLossGrad, sgdPlateauStart, lr, count, 0, 19, sgdPlateauBounds);
         const sgdPlateauPoints = simulatePlateauEscapeSGD(sgdPlateauStart, lr, count, 0.025, 17, sgdPlateauBounds);
         const valleyPoints = simulateSGD(valleyLossGrad, valleyStart, lr, count, 0.035, 41, valleyBounds);
-        const momentumPoints = simulateSGDM(valleyLossGrad, valleyStart, lr, count, 0.035, 41, valleyBounds, 0.88, 2.5);
-        const matrixSgdmPoints = simulateMatrixSGDM(matrixStart, lr, count, matrixBounds, 0.88);
-        const muonPoints = simulateMuonProxy(matrixStart, lr, count, matrixBounds, 0.88);
+        const momentumPoints = simulateSGDM(valleyLossGrad, valleyStart, sgdmLr, count, 0.035, 41, valleyBounds, beta, 2.5);
+        const modePoints = simulateModeResiduals(sgdmLr, count, beta);
         const visibleNoiseGd = noiseGdPoints.slice(0, frame + 1);
         const visibleNoise = noisePoints.slice(0, frame + 1);
         const visibleSgdPlateauGd = sgdPlateauGdPoints.slice(0, frame + 1);
         const visibleSgdPlateau = sgdPlateauPoints.slice(0, frame + 1);
         const visibleValley = valleyPoints.slice(0, frame + 1);
         const visibleMomentum = momentumPoints.slice(0, frame + 1);
-        const visibleMatrixSgdm = matrixSgdmPoints.slice(0, frame + 1);
-        const visibleMuon = muonPoints.slice(0, frame + 1);
+        const visibleMode = modePoints.slice(0, frame + 1);
         const noiseGdEnd = visibleNoiseGd[visibleNoiseGd.length - 1];
         const noiseEnd = visibleNoise[visibleNoise.length - 1];
         const sgdPlateauGdEnd = visibleSgdPlateauGd[visibleSgdPlateauGd.length - 1];
         const sgdPlateauEnd = visibleSgdPlateau[visibleSgdPlateau.length - 1];
         const valleyEnd = visibleValley[visibleValley.length - 1];
         const momentumEnd = visibleMomentum[visibleMomentum.length - 1];
-        const matrixSgdmEnd = visibleMatrixSgdm[visibleMatrixSgdm.length - 1];
-        const muonEnd = visibleMuon[visibleMuon.length - 1];
+        const modeEnd = visibleMode[visibleMode.length - 1];
         const noiseDistance = Math.hypot(noiseEnd.x - noiseOptimum.x, noiseEnd.y - noiseOptimum.y);
         const noiseGdDistance = Math.hypot(noiseGdEnd.x - noiseOptimum.x, noiseGdEnd.y - noiseOptimum.y);
         const sgdPlateauDistance = Math.hypot(sgdPlateauEnd.x - sgdPlateauDrop.x, sgdPlateauEnd.y - sgdPlateauDrop.y);
         const sgdPlateauGdDistance = Math.hypot(sgdPlateauGdEnd.x - sgdPlateauDrop.x, sgdPlateauGdEnd.y - sgdPlateauDrop.y);
         const valleyDistance = Math.hypot(valleyEnd.x - valleyOptimum.x, valleyEnd.y - valleyOptimum.y);
         const momentumDistance = Math.hypot(momentumEnd.x - valleyOptimum.x, momentumEnd.y - valleyOptimum.y);
-        const matrixSgdmDistance = Math.hypot(matrixSgdmEnd.x - matrixOptimum.x, matrixSgdmEnd.y - matrixOptimum.y);
-        const matrixWeakResidual = Math.abs(matrixSgdmEnd.y - matrixOptimum.y);
-        const muonDistance = Math.hypot(muonEnd.x - matrixOptimum.x, muonEnd.y - matrixOptimum.y);
+        const mainResidual = modeEnd.main;
+        const smallResidual = modeEnd.small;
+        const adamMainResidual = modeEnd.adamMain;
+        const adamSmallResidual = modeEnd.adamSmall;
         const zigzags = signChanges(visibleValley);
         const momentumZigzags = signChanges(visibleMomentum);
 
         learningRateValue.textContent = fmt(lr, 3);
-        sgdmLearningRateMirror.textContent = fmt(lr, 3);
+        sgdmLearningRateValue.textContent = fmt(sgdmLr, 3);
+        sgdmBetaValue.textContent = fmt(beta, 2);
         stepsValue.textContent = String(count);
 
         noisePlot.gdPath.setAttribute("d", pathFrom(visibleNoiseGd, noiseProjection));
@@ -1564,26 +1586,24 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         sgdValleyDot(sgdmContourPlot.endDot, null, momentumEnd, 0, 0);
         sgdValleyDot(sgdmContourPlot.optDot, sgdmContourPlot.optLabel, valleyOptimum, 10, -10);
 
-        sgdmPlot.sgdPath.setAttribute("d", sgdValleyPathFrom([matrixStart, matrixSgdmEnd]));
-        sgdmPlot.path.setAttribute("d", sgdValleyPathFrom([matrixStart, muonEnd]));
-        const matrixResidualTarget = { x: matrixSgdmEnd.x, y: matrixOptimum.y };
-        sgdmPlot.residualPath.setAttribute("d", sgdValleyPathFrom([matrixSgdmEnd, matrixResidualTarget]));
-        sgdValleyDot(sgdmPlot.startDot, sgdmPlot.startLabel, matrixStart, 10, -10);
-        sgdValleyDot(sgdmPlot.endDot, null, muonEnd, 0, 0);
-        sgdValleyDot(sgdmPlot.weakDot, null, matrixSgdmEnd, 0, 0);
-        const residualMid = sgdValleyProject(
-          (matrixSgdmEnd.x + matrixResidualTarget.x) / 2,
-          (matrixSgdmEnd.y + matrixResidualTarget.y) / 2
-        );
-        sgdmPlot.weakLabel.setAttribute("x", residualMid.x + 10);
-        sgdmPlot.weakLabel.setAttribute("y", residualMid.y + 4);
-        sgdValleyDot(sgdmPlot.optDot, sgdmPlot.optLabel, matrixOptimum, 10, -10);
+        sgdmPlot.mainCurve.setAttribute("d", modePathFrom(visibleMode, "main", count));
+        sgdmPlot.smallCurve.setAttribute("d", modePathFrom(visibleMode, "small", count));
+        sgdmPlot.adamMainCurve.setAttribute("d", modePathFrom(visibleMode, "adamMain", count));
+        sgdmPlot.adamSmallCurve.setAttribute("d", modePathFrom(visibleMode, "adamSmall", count));
+        modeDot(sgdmPlot.mainDot, modeEnd, "main", count);
+        modeDot(sgdmPlot.smallDot, modeEnd, "small", count);
+        modeDot(sgdmPlot.adamMainDot, modeEnd, "adamMain", count);
+        modeDot(sgdmPlot.adamSmallDot, modeEnd, "adamSmall", count);
+        setModeBar(sgdmPlot.mainBar, sgdmPlot.mainValue, mainResidual, 0);
+        setModeBar(sgdmPlot.smallBar, sgdmPlot.smallValue, smallResidual, 1);
+        setModeBar(sgdmPlot.adamMainBar, sgdmPlot.adamMainValue, adamMainResidual, 2);
+        setModeBar(sgdmPlot.adamSmallBar, sgdmPlot.adamSmallValue, adamSmallResidual, 3);
 
         noiseReadout.textContent = "step " + frame + " / " + count + " | SGD big " + fmt(noiseDistance, 3) + " | GD big " + fmt(noiseGdDistance, 3);
         sgdPlateauReadout.textContent = "step " + frame + " / " + count + " | SGD dist " + fmt(sgdPlateauDistance, 3) + " | GD dist " + fmt(sgdPlateauGdDistance, 3);
         valleyReadout.textContent = "step " + frame + " / " + count + " | zigzags " + zigzags + " | dist " + fmt(valleyDistance, 3);
-        sgdmContourReadout.textContent = "step " + frame + " / " + count + " | SGD zig " + zigzags + " | SGDM zig " + momentumZigzags;
-        sgdmReadout.textContent = "step " + frame + " / " + count + " | weak " + fmt(matrixWeakResidual, 3) + " | Muon dist " + fmt(muonDistance, 3);
+        sgdmContourReadout.textContent = "step " + frame + " / " + count + " | beta " + fmt(beta, 2) + " | SGD zig " + zigzags + " | SGDM zig " + momentumZigzags;
+        sgdmReadout.textContent = "step " + frame + " / " + count + " | SGDM 大 " + fmt(mainResidual, 3) + " | SGDM 小 " + fmt(smallResidual, 3) + " | Adam 大 " + fmt(adamMainResidual, 3) + " | Adam 小 " + fmt(adamSmallResidual, 3);
 
         if (noiseEnd.x > 0.25) {
           noiseStatus.textContent = "噪音向量：SGD 已经被 mini-batch 噪音推出小坑，灰色 GD 仍停在左侧小坑附近。";
@@ -1614,17 +1634,17 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
         } else if (momentumZigzags < zigzags) {
           sgdmContourStatus.textContent = "等高线：SGDM 把上下震荡从 " + zigzags + " 次压到 " + momentumZigzags + " 次，路径更贴近向左的谷底方向。";
         } else {
-          sgdmContourStatus.textContent = "等高线：SGD 仍在上下穿过灰色等高线，SGDM 正在累积更稳定的向左方向。";
+          sgdmContourStatus.textContent = "等高线：SGD 仍在上下穿过等高线，SGDM 正在累积更稳定的向左方向。";
         }
 
         if (frame < 8) {
-          sgdmStatus.textContent = "矩阵方向：SGDM 和 Muon 都从同一个矩阵状态出发，但 Muon 会先把 momentum 更新正交化。";
-        } else if (matrixWeakResidual > 0.30 && muonDistance < matrixSgdmDistance) {
-          sgdmStatus.textContent = "矩阵方向：SGDM 的主方向已经降下去，但弱方向还残留 " + fmt(matrixWeakResidual, 3) + "；Muon 更接近最优点。";
-        } else if (muonDistance < matrixSgdmDistance) {
-          sgdmStatus.textContent = "矩阵方向：Muon 把矩阵更新变得更均衡，距离 " + fmt(muonDistance, 3) + "，SGDM 距离 " + fmt(matrixSgdmDistance, 3) + "。";
+          sgdmStatus.textContent = "矩阵方向：大方向和小方向一开始都有残差，需要同时被训练下去。";
+        } else if (mainResidual < 0.08 && smallResidual > 0.45) {
+          sgdmStatus.textContent = "矩阵方向：SGDM 已经把大方向训练完了，但小方向还剩 " + fmt(smallResidual, 3) + "，仍然没有训练好。";
+        } else if (adamSmallResidual < smallResidual) {
+          sgdmStatus.textContent = "矩阵方向：Adam 会让大方向和小方向都跟着下降，小方向残差 " + fmt(adamSmallResidual, 3) + "，比 SGDM 更低。";
         } else {
-          sgdmStatus.textContent = "矩阵方向：SGDM 仍在用未正交化的 momentum，弱方向推进更慢。";
+          sgdmStatus.textContent = "矩阵方向：SGDM 的更新仍被大方向主导，小方向下降得更慢。";
         }
       }
 
@@ -1632,7 +1652,7 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       drawMesh(sgdPlateauPlot.mesh, sgdPlateauLossGrad, sgdPlateauBounds, sgdPlateauProjection);
       drawValleyContours(valleyPlot.mesh);
       drawValleyContours(sgdmContourPlot.lines);
-      drawMatrixModeContours(sgdmPlot.mesh);
+      drawModeFrame(sgdmPlot.frame);
       renderSGD();
 
       window.setInterval(function () {
@@ -1647,6 +1667,16 @@ v_{t+1} &= \beta v_t + (1 - \beta)g_t \\
       });
 
       steps.addEventListener("input", function () {
+        frame = 0;
+        renderSGD();
+      });
+
+      sgdmLearningRate.addEventListener("input", function () {
+        frame = 0;
+        renderSGD();
+      });
+
+      sgdmBeta.addEventListener("input", function () {
         frame = 0;
         renderSGD();
       });
