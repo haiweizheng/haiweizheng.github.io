@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gradient Descent Failure Cases</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/contrib/auto-render.min.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -14,6 +17,10 @@
       --line: #d8dde6;
       --grid: #e8ebf0;
       --path: #c7432b;
+      --gd-path: #747b84;
+      --sgd-path: #b842c2;
+      --momentum-path: #0f8b8d;
+      --muon-path: #2563eb;
       --global: #147f74;
       --local: #6b58d3;
       --shadow: 0 18px 45px rgba(31, 43, 58, 0.08);
@@ -61,9 +68,27 @@
 
     .workspace {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 1fr;
       gap: 16px;
       align-items: start;
+    }
+
+    .topic-header {
+      margin: 34px 0 18px;
+    }
+
+    .topic-header h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.08;
+    }
+
+    .topic-header p {
+      margin: 9px 0 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
     }
 
     .panel {
@@ -75,8 +100,7 @@
 
     .controls {
       padding: 16px;
-      position: sticky;
-      top: 12px;
+      position: static;
     }
 
     .control-grid {
@@ -90,6 +114,35 @@
       border: 1px solid var(--grid);
       border-radius: 8px;
       background: #ffffff;
+    }
+
+    .control-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .reset-button {
+      min-height: 32px;
+      padding: 0 14px;
+      border: 1px solid #cdd3dd;
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reset-button:hover {
+      border-color: #aeb6c3;
+      background: #f7f9fc;
+    }
+
+    .reset-button:focus-visible {
+      outline: 2px solid var(--path);
+      outline-offset: 2px;
     }
 
     .algorithm {
@@ -107,25 +160,39 @@
     }
 
     .formula {
-      margin: 0 0 10px;
+      margin: 0 0 8px;
       padding: 8px 10px;
       border-radius: 6px;
       background: #ffffff;
       border: 1px solid var(--grid);
       color: var(--ink);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: inherit;
       font-size: 13px;
       line-height: 1.45;
       overflow-x: auto;
-      white-space: nowrap;
+      white-space: normal;
     }
 
-    .algorithm ol {
+    .formula .katex-display {
       margin: 0;
-      padding-left: 18px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 2px 0;
+    }
+
+    .formula .katex {
+      font-size: 1.08em;
+    }
+
+    .formula-title {
+      margin: 8px 0 5px;
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .formula-title:first-of-type {
+      margin-top: 0;
     }
 
     label {
@@ -148,31 +215,6 @@
       width: 100%;
       margin: 10px 0 0;
       accent-color: var(--path);
-    }
-
-    .status {
-      margin-top: 14px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fbfcfe;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .status strong {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--ink);
-      font-size: 14px;
-    }
-
-    .metric {
-      padding-top: 9px;
-      margin-top: 9px;
-      border-top: 1px solid var(--grid);
-      font-variant-numeric: tabular-nums;
     }
 
     .plots {
@@ -205,6 +247,17 @@
       font-variant-numeric: tabular-nums;
       text-align: right;
       white-space: nowrap;
+    }
+
+    .example-status {
+      margin: -4px 0 12px;
+      padding: 8px 10px;
+      border-left: 3px solid var(--path);
+      background: #f7f9f8;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums;
     }
 
     svg {
@@ -246,14 +299,6 @@
     }
 
     @media (max-width: 860px) {
-      .workspace {
-        grid-template-columns: 1fr;
-      }
-
-      .controls {
-        position: static;
-      }
-
       .plot-head {
         align-items: flex-start;
         flex-direction: column;
@@ -269,7 +314,7 @@
 <body>
   <main>
     <header>
-      <h1>Gradient descent 的两个失效例子</h1>
+      <h1>Gradient Descent (GD)</h1>
       <p class="subtitle">普通 GD 只根据当前位置的梯度走下一步。下面两张图会自动循环播放：一个展示 GD 掉进左边小坑后出不来，另一个展示它从斜坡滑到平地后，因为梯度太小而走不到远处的最优坑。</p>
     </header>
 
@@ -277,11 +322,8 @@
       <aside class="panel controls" aria-label="GD controls">
         <div class="algorithm">
           <h2>GD 算法</h2>
-          <div class="formula">theta = theta - lr * grad(L(theta))</div>
-          <ol>
-            <li>初始化参数 theta</li>
-            <li>重复计算梯度并沿负梯度方向更新</li>
-          </ol>
+          <div class="formula-title">数学公式</div>
+          <div class="formula">\[\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)\]</div>
         </div>
 
         <div class="control-grid">
@@ -294,13 +336,12 @@
             <label for="steps">训练次数 <output id="stepsValue">90</output></label>
             <input id="steps" type="range" min="1" max="220" step="1" value="90">
           </div>
+
+          <div class="control-actions">
+            <button id="gdReset" class="reset-button" type="button">重置</button>
+          </div>
         </div>
 
-        <div class="status">
-          <strong>当前读数</strong>
-          <div id="trapStatus">局部坑：正在计算</div>
-          <div class="metric" id="plateauStatus">平地：正在计算</div>
-        </div>
       </aside>
 
       <section class="plots">
@@ -309,6 +350,7 @@
             <h2>例子一：局部最小值坑</h2>
             <div class="readout" id="trapReadout">step 0 / 90</div>
           </div>
+          <div class="example-status" id="trapStatus">局部坑：正在计算</div>
           <svg id="trapSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent trapped in a local minimum">
             <defs>
               <marker id="trapArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -339,6 +381,7 @@
             <h2>例子二：斜坡到平地后走不动</h2>
             <div class="readout" id="plateauReadout">step 0 / 90</div>
           </div>
+          <div class="example-status" id="plateauStatus">平地：正在计算</div>
           <svg id="plateauSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing gradient descent sliding down to a flat plateau and missing the best pit">
             <defs>
               <marker id="plateauArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -364,12 +407,245 @@
         </article>
       </section>
     </section>
+
+    <section class="topic-header">
+      <h2>Stochastic Gradient Descent (SGD)</h2>
+      <p>SGD 每一步只看一个随机 mini-batch 的梯度，所以它比完整 GD 更便宜；mini-batch 带来的随机噪音有时能把路径推出浅坑，也可能让它穿过平地继续找到更低的坑。但在狭长山谷里，它会沿高曲率方向来回震荡，这正是后面引入 SGDM 的动机。</p>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel controls" aria-label="SGD controls">
+        <div class="algorithm">
+          <h2>SGD 算法</h2>
+          <div class="formula-title">数学公式</div>
+          <div class="formula">\[\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t; B_t)\]</div>
+        </div>
+
+        <div class="control-grid">
+          <div class="control">
+            <label for="sgdLearningRate">学习率 <output id="sgdLearningRateValue">0.100</output></label>
+            <input id="sgdLearningRate" type="range" min="0.02" max="0.16" step="0.005" value="0.10">
+          </div>
+
+          <div class="control">
+            <label for="sgdSteps">训练次数 <output id="sgdStepsValue">80</output></label>
+            <input id="sgdSteps" type="range" min="1" max="180" step="1" value="80">
+          </div>
+
+          <div class="control-actions">
+            <button id="sgdReset" class="reset-button" type="button">重置</button>
+          </div>
+        </div>
+
+      </aside>
+
+      <section class="plots">
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子一：随机噪音向量跳出小坑</h2>
+            <div class="readout" id="sgdNoiseReadout">step 0 / 80</div>
+          </div>
+          <div class="example-status" id="sgdNoiseStatus">噪音向量：正在计算</div>
+          <svg id="sgdNoiseSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing stochastic mini-batch noise escaping a shallow pit">
+            <defs>
+              <marker id="sgdNoiseArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--sgd-path)"></path>
+              </marker>
+            </defs>
+            <g id="sgdNoiseMesh"></g>
+            <path id="sgdNoiseGdPath" fill="none" stroke="var(--gd-path)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.58"></path>
+            <path id="sgdNoisePath" fill="none" stroke="var(--sgd-path)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdNoiseArrow)"></path>
+            <circle id="sgdNoiseStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdNoiseGdEndDot" r="6.2" fill="var(--gd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdNoiseEndDot" r="6.8" fill="var(--sgd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdNoiseOptDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdNoiseLocalDot" r="6.5" fill="var(--local)" stroke="#fff" stroke-width="2"></circle>
+            <text id="sgdNoiseStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="sgdNoiseGdEndLabel" fill="var(--gd-path)" font-size="13" font-weight="700">GD stuck</text>
+            <text id="sgdNoiseOptLabel" fill="var(--global)" font-size="13" font-weight="700">big pit</text>
+            <text id="sgdNoiseLocalLabel" fill="var(--local)" font-size="13" font-weight="700">small pit</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--gd-path)"></i>GD path</span>
+            <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
+            <span><i class="swatch" style="background: var(--local)"></i>小坑</span>
+            <span><i class="swatch" style="background: var(--global)"></i>大坑</span>
+          </div>
+          <p class="note">同一个非凸地形里，灰色 GD 容易停在左侧小坑；SGD 的 mini-batch 梯度里会混入随机噪音向量，某些 batch 会把路径推出浅坑，最后滑向右侧更深的大坑。</p>
+        </article>
+
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子二：SGD 穿过平地到达最优坑</h2>
+            <div class="readout" id="sgdPlateauReadout">step 0 / 80</div>
+          </div>
+          <div class="example-status" id="sgdPlateauStatus">平地：正在计算</div>
+          <svg id="sgdPlateauSvg" viewBox="0 0 880 540" role="img" aria-label="3D wireframe showing SGD crossing a flat plateau to reach the best pit">
+            <defs>
+              <marker id="sgdPlateauArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--sgd-path)"></path>
+              </marker>
+            </defs>
+            <g id="sgdPlateauMesh"></g>
+            <path id="sgdPlateauGdPath" fill="none" stroke="var(--gd-path)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.58"></path>
+            <path id="sgdPlateauPath" fill="none" stroke="var(--sgd-path)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdPlateauArrow)"></path>
+            <circle id="sgdPlateauStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdPlateauGdEndDot" r="6.2" fill="var(--gd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdPlateauEndDot" r="6.8" fill="var(--sgd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdPlateauDropDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="sgdPlateauStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="sgdPlateauGdEndLabel" fill="var(--gd-path)" font-size="13" font-weight="700">GD stuck</text>
+            <text id="sgdPlateauDropLabel" fill="var(--global)" font-size="13" font-weight="700">best pit</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--gd-path)"></i>GD path</span>
+            <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
+            <span><i class="swatch" style="background: var(--global)"></i>平地上的最优坑</span>
+          </div>
+          <p class="note">同样是从斜坡滑到平地，GD 会停在灰色终点附近；SGD 的 mini-batch 噪音在平地上提供额外扰动，路径有机会继续穿过平地并进入右侧更低的坑。</p>
+        </article>
+
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子三：狭长山谷里下降不顺</h2>
+            <div class="readout" id="sgdValleyReadout">step 0 / 80</div>
+          </div>
+          <div class="example-status" id="sgdValleyStatus">山谷：正在计算</div>
+          <svg id="sgdValleySvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot showing SGD zigzagging in a horizontal narrow valley">
+            <defs>
+              <marker id="sgdValleyArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--sgd-path)"></path>
+              </marker>
+            </defs>
+            <g id="sgdValleyMesh"></g>
+            <path id="sgdValleyPath" fill="none" stroke="var(--sgd-path)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdValleyArrow)"></path>
+            <circle id="sgdValleyStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdValleyEndDot" r="6.8" fill="var(--sgd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdValleyOptDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="sgdValleyStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="sgdValleyOptLabel" fill="var(--global)" font-size="13" font-weight="700">optimum</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD path</span>
+            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
+          </div>
+          <p class="note">山谷横向放置，左边是低损失的最优点，右边更高。SGD 从右侧出发，会沿狭长谷底向左下降，但在上下陡峭方向反复横跳，推进不够顺。</p>
+        </article>
+
+      </section>
+    </section>
+
+    <section class="topic-header">
+      <h2>SGD with Momentum (SGDM)</h2>
+      <p>SGDM 在 SGD 的基础上加入 velocity，把过去的更新方向保留下来。它可以减少狭长山谷里的上下震荡；但对矩阵权重来说，SGDM 仍然直接使用原始动量矩阵，更新可能被某个主奇异方向支配。Muon 会把 momentum 矩阵正交化，让矩阵更新方向更均衡。</p>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel controls" aria-label="SGDM controls">
+        <div class="algorithm">
+          <h2>SGDM 算法</h2>
+          <div class="formula-title">数学公式</div>
+          <div class="formula">\[
+\begin{aligned}
+v_{t+1} &= \beta v_t + (1 - \beta)\nabla L(\theta_t; B_t) \\
+\theta_{t+1} &= \theta_t - \eta v_{t+1}
+\end{aligned}
+\]</div>
+        </div>
+
+        <div class="control-grid">
+          <div class="control">
+            <label for="sgdmLearningRateMirror">学习率 <output id="sgdmLearningRateMirror">0.100</output></label>
+            <input type="range" min="0.02" max="0.16" step="0.005" value="0.10" disabled>
+          </div>
+
+          <div class="control">
+            <label for="sgdmBeta">beta <output id="sgdmBeta">0.88</output></label>
+            <input type="range" min="0" max="0.99" step="0.01" value="0.88" disabled>
+          </div>
+        </div>
+
+      </aside>
+
+      <section class="plots">
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子一：等高线看动量</h2>
+            <div class="readout" id="sgdmContourReadout">step 0 / 80</div>
+          </div>
+          <div class="example-status" id="sgdmContourStatus">等高线：正在计算</div>
+          <svg id="sgdmContourSvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot comparing SGD and SGDM in a horizontal narrow valley">
+            <defs>
+              <marker id="sgdmContourSgdArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--sgd-path)"></path>
+              </marker>
+              <marker id="sgdmContourArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--momentum-path)"></path>
+              </marker>
+            </defs>
+            <g id="sgdmContourLines"></g>
+            <path id="sgdmContourSgdPath" fill="none" stroke="var(--sgd-path)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.76" marker-end="url(#sgdmContourSgdArrow)"></path>
+            <path id="sgdmContourPath" fill="none" stroke="var(--momentum-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdmContourArrow)"></path>
+            <circle id="sgdmContourStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmContourSgdEndDot" r="6.2" fill="var(--sgd-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmContourEndDot" r="6.8" fill="var(--momentum-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmContourOptDot" r="6.8" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="sgdmContourStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="sgdmContourOptLabel" fill="var(--global)" font-size="13" font-weight="700">optimum</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--sgd-path)"></i>SGD</span>
+            <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM beta=0.88</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
+            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
+          </div>
+          <p class="note">这张图沿用横向地理等高线，只保留浅灰地形线。SGD 会在上下陡峭方向反复摆动；SGDM 抵消上下震荡，把持续向左的谷底方向累积起来。</p>
+        </article>
+
+        <article class="panel plot-card">
+          <div class="plot-head">
+            <h2>例子二：矩阵方向不均衡</h2>
+            <div class="readout" id="sgdmReadout">step 0 / 80</div>
+          </div>
+          <div class="example-status" id="sgdmStatus">矩阵方向：正在计算</div>
+          <svg id="sgdmSvg" viewBox="0 0 880 540" role="img" aria-label="2D contour plot comparing SGDM and Muon on matrix update imbalance">
+            <defs>
+              <marker id="sgdmSgdArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--momentum-path)"></path>
+              </marker>
+              <marker id="sgdmArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="var(--muon-path)"></path>
+              </marker>
+            </defs>
+            <g id="sgdmMesh"></g>
+            <path id="sgdmSgdPath" fill="none" stroke="var(--momentum-path)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.78" marker-end="url(#sgdmSgdArrow)"></path>
+            <path id="sgdmPath" fill="none" stroke="var(--muon-path)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#sgdmArrow)"></path>
+            <circle id="sgdmStartDot" r="5.5" fill="#202124" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmEndDot" r="6.8" fill="var(--muon-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmWeakDot" r="6.5" fill="var(--momentum-path)" stroke="#fff" stroke-width="2"></circle>
+            <circle id="sgdmOptDot" r="6.5" fill="var(--global)" stroke="#fff" stroke-width="2"></circle>
+            <text id="sgdmStartLabel" fill="#202124" font-size="13" font-weight="700">start</text>
+            <text id="sgdmWeakLabel" fill="var(--momentum-path)" font-size="13" font-weight="700">weak mode</text>
+            <text id="sgdmOptLabel" fill="var(--global)" font-size="13" font-weight="700">optimum</text>
+          </svg>
+          <div class="legend">
+            <span><i class="swatch" style="background: var(--momentum-path)"></i>SGDM path</span>
+            <span><i class="swatch" style="background: var(--muon-path)"></i>Muon path</span>
+            <span><i class="swatch" style="background: var(--momentum-path)"></i>弱方向残留</span>
+            <span><i class="swatch" style="background: var(--global)"></i>最优点</span>
+            <span><i class="swatch" style="background: #9aa0a6"></i>灰色等高线</span>
+          </div>
+          <p class="note">这个 toy 图把矩阵更新拆成两个奇异方向。SGDM 直接使用 momentum，更新容易被主方向支配，弱方向推进慢；Muon 对 momentum 矩阵做 Newton-Schulz 近似正交化，让多个矩阵方向的更新强度更接近，因此路径更直接。</p>
+        </article>
+      </section>
+    </section>
   </main>
 
   <script>
     (function () {
       const learningRate = document.getElementById("learningRate");
       const steps = document.getElementById("steps");
+      const resetButton = document.getElementById("gdReset");
       const learningRateValue = document.getElementById("learningRateValue");
       const stepsValue = document.getElementById("stepsValue");
       const trapReadout = document.getElementById("trapReadout");
@@ -412,10 +688,10 @@
 
       const trapProjection = {
         cx: 442,
-        cy: 318,
+        cy: 290,
         sx: 72,
         sy: 34,
-        sz: 58,
+        sz: 46,
         zOffset: 0.1
       };
 
@@ -460,7 +736,7 @@
         let gy = 0.05 * y;
         const terms = [
           { amp: -1.25, cx: -1.42, cy: 0.58, sx: 0.58, sy: 0.52 },
-          { amp: -2.25, cx: 1.48, cy: -0.28, sx: 0.78, sy: 0.68 }
+          { amp: -3.15, cx: 1.48, cy: -0.28, sx: 0.78, sy: 0.68 }
         ];
 
         for (const term of terms) {
@@ -543,20 +819,7 @@
       }
 
       function drawAxes(target, lossFn, cfg) {
-        const floorZ = -2.25;
-        const o = project(bounds.xmin, bounds.ymin, floorZ, cfg);
-        const xEnd = project(bounds.xmax, bounds.ymin, floorZ, cfg);
-        const yEnd = project(bounds.xmin, bounds.ymax, floorZ, cfg);
-        const zEnd = project(bounds.xmin, bounds.ymin, 1.65, cfg);
-        const originSurface = project(bounds.xmin, bounds.ymin, lossFn(bounds.xmin, bounds.ymin).value, cfg);
-        target.innerHTML = [
-          "<line x1=\"" + o.x + "\" y1=\"" + o.y + "\" x2=\"" + xEnd.x + "\" y2=\"" + xEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.48\"/>",
-          "<line x1=\"" + o.x + "\" y1=\"" + o.y + "\" x2=\"" + yEnd.x + "\" y2=\"" + yEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.48\"/>",
-          "<line x1=\"" + originSurface.x + "\" y1=\"" + originSurface.y + "\" x2=\"" + zEnd.x + "\" y2=\"" + zEnd.y + "\" stroke=\"#111\" stroke-width=\"1.2\" opacity=\"0.38\"/>",
-          "<text x=\"" + (xEnd.x + 8) + "\" y=\"" + (xEnd.y + 4) + "\" fill=\"#555\" font-size=\"12\">w1</text>",
-          "<text x=\"" + (yEnd.x - 8) + "\" y=\"" + (yEnd.y + 14) + "\" text-anchor=\"end\" fill=\"#555\" font-size=\"12\">w2</text>",
-          "<text x=\"" + (zEnd.x + 8) + "\" y=\"" + (zEnd.y + 4) + "\" fill=\"#555\" font-size=\"12\">loss</text>"
-        ].join("");
+        target.innerHTML = "";
       }
 
       function pathFrom(points, cfg) {
@@ -647,7 +910,753 @@
         frame = 0;
         render();
       });
+
+      resetButton.addEventListener("click", function () {
+        learningRate.value = learningRate.defaultValue;
+        steps.value = steps.defaultValue;
+        frame = 0;
+        render();
+      });
     })();
+  </script>
+  <script>
+    (function () {
+      const learningRate = document.getElementById("sgdLearningRate");
+      const steps = document.getElementById("sgdSteps");
+      const resetButton = document.getElementById("sgdReset");
+      const learningRateValue = document.getElementById("sgdLearningRateValue");
+      const stepsValue = document.getElementById("sgdStepsValue");
+      const sgdmLearningRateMirror = document.getElementById("sgdmLearningRateMirror");
+      const noiseReadout = document.getElementById("sgdNoiseReadout");
+      const sgdPlateauReadout = document.getElementById("sgdPlateauReadout");
+      const valleyReadout = document.getElementById("sgdValleyReadout");
+      const sgdmContourReadout = document.getElementById("sgdmContourReadout");
+      const sgdmReadout = document.getElementById("sgdmReadout");
+      const noiseStatus = document.getElementById("sgdNoiseStatus");
+      const sgdPlateauStatus = document.getElementById("sgdPlateauStatus");
+      const valleyStatus = document.getElementById("sgdValleyStatus");
+      const sgdmContourStatus = document.getElementById("sgdmContourStatus");
+      const sgdmStatus = document.getElementById("sgdmStatus");
+
+      const noisePlot = {
+        mesh: document.getElementById("sgdNoiseMesh"),
+        gdPath: document.getElementById("sgdNoiseGdPath"),
+        path: document.getElementById("sgdNoisePath"),
+        startDot: document.getElementById("sgdNoiseStartDot"),
+        gdEndDot: document.getElementById("sgdNoiseGdEndDot"),
+        endDot: document.getElementById("sgdNoiseEndDot"),
+        optDot: document.getElementById("sgdNoiseOptDot"),
+        localDot: document.getElementById("sgdNoiseLocalDot"),
+        startLabel: document.getElementById("sgdNoiseStartLabel"),
+        gdEndLabel: document.getElementById("sgdNoiseGdEndLabel"),
+        optLabel: document.getElementById("sgdNoiseOptLabel"),
+        localLabel: document.getElementById("sgdNoiseLocalLabel")
+      };
+
+      const valleyPlot = {
+        mesh: document.getElementById("sgdValleyMesh"),
+        path: document.getElementById("sgdValleyPath"),
+        startDot: document.getElementById("sgdValleyStartDot"),
+        endDot: document.getElementById("sgdValleyEndDot"),
+        optDot: document.getElementById("sgdValleyOptDot"),
+        startLabel: document.getElementById("sgdValleyStartLabel"),
+        optLabel: document.getElementById("sgdValleyOptLabel")
+      };
+
+      const sgdPlateauPlot = {
+        mesh: document.getElementById("sgdPlateauMesh"),
+        gdPath: document.getElementById("sgdPlateauGdPath"),
+        path: document.getElementById("sgdPlateauPath"),
+        startDot: document.getElementById("sgdPlateauStartDot"),
+        gdEndDot: document.getElementById("sgdPlateauGdEndDot"),
+        endDot: document.getElementById("sgdPlateauEndDot"),
+        dropDot: document.getElementById("sgdPlateauDropDot"),
+        startLabel: document.getElementById("sgdPlateauStartLabel"),
+        gdEndLabel: document.getElementById("sgdPlateauGdEndLabel"),
+        dropLabel: document.getElementById("sgdPlateauDropLabel")
+      };
+
+      const sgdmContourPlot = {
+        lines: document.getElementById("sgdmContourLines"),
+        sgdPath: document.getElementById("sgdmContourSgdPath"),
+        path: document.getElementById("sgdmContourPath"),
+        startDot: document.getElementById("sgdmContourStartDot"),
+        sgdEndDot: document.getElementById("sgdmContourSgdEndDot"),
+        endDot: document.getElementById("sgdmContourEndDot"),
+        optDot: document.getElementById("sgdmContourOptDot"),
+        startLabel: document.getElementById("sgdmContourStartLabel"),
+        optLabel: document.getElementById("sgdmContourOptLabel")
+      };
+
+      const sgdmPlot = {
+        mesh: document.getElementById("sgdmMesh"),
+        sgdPath: document.getElementById("sgdmSgdPath"),
+        path: document.getElementById("sgdmPath"),
+        startDot: document.getElementById("sgdmStartDot"),
+        endDot: document.getElementById("sgdmEndDot"),
+        weakDot: document.getElementById("sgdmWeakDot"),
+        optDot: document.getElementById("sgdmOptDot"),
+        startLabel: document.getElementById("sgdmStartLabel"),
+        weakLabel: document.getElementById("sgdmWeakLabel"),
+        optLabel: document.getElementById("sgdmOptLabel")
+      };
+
+      const noiseBounds = { xmin: -3.35, xmax: 3.35, ymin: -2.65, ymax: 2.65 };
+      const sgdPlateauBounds = { xmin: -3.35, xmax: 3.35, ymin: -2.65, ymax: 2.65 };
+      const valleyBounds = { xmin: -2.5, xmax: 2.5, ymin: -1.4, ymax: 1.4 };
+      const matrixBounds = { xmin: -2.5, xmax: 2.5, ymin: -1.4, ymax: 1.4 };
+      const noiseStart = { x: -2.65, y: 1.45 };
+      const noiseLocal = { x: -1.391672, y: 0.57314 };
+      const noiseOptimum = { x: 1.460249, y: -0.277959 };
+      const sgdPlateauStart = { x: -2.75, y: 0.36 };
+      const sgdPlateauDrop = { x: 1.05, y: -0.12 };
+      const valleyStart = { x: 2.0, y: 0.85 };
+      const valleyOptimum = { x: -1.65, y: 0 };
+      const matrixStart = { x: 2.10, y: 1.00 };
+      const matrixOptimum = { x: 0, y: 0 };
+      const valleyAxis = { x: 1, y: 0 };
+      const valleyCross = { x: -valleyAxis.y, y: valleyAxis.x };
+      const valleyCurvature = { along: 0.12, cross: 18 };
+      let frame = 0;
+
+      const noiseProjection = {
+        cx: 442,
+        cy: 290,
+        sx: 72,
+        sy: 34,
+        sz: 46,
+        zOffset: 0.1
+      };
+
+      const sgdPlateauProjection = {
+        cx: 442,
+        cy: 255,
+        sx: 72,
+        sy: 28,
+        sz: 62,
+        zOffset: -0.2
+      };
+
+      const sgdValleyContourProjection = {
+        left: 70,
+        right: 810,
+        top: 70,
+        bottom: 470,
+        xmin: -2.5,
+        xmax: 2.5,
+        ymin: -1.4,
+        ymax: 1.4
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function fmt(value, digits) {
+        return Number(value).toFixed(digits);
+      }
+
+      function seededNoise(step, salt) {
+        const raw = Math.sin((step + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+        return (raw - Math.floor(raw)) * 2 - 1;
+      }
+
+      function project(x, y, z, cfg) {
+        return {
+          x: cfg.cx + (x - y) * cfg.sx,
+          y: cfg.cy + (x + y) * cfg.sy - (z - cfg.zOffset) * cfg.sz
+        };
+      }
+
+      function gaussian(x, y, cx, cy, sx0, sy0, amp) {
+        const dx = x - cx;
+        const dy = y - cy;
+        const e = Math.exp(-0.5 * (dx * dx / (sx0 * sx0) + dy * dy / (sy0 * sy0)));
+        return {
+          value: amp * e,
+          gx: amp * e * (-dx / (sx0 * sx0)),
+          gy: amp * e * (-dy / (sy0 * sy0))
+        };
+      }
+
+      function sigmoid(t) {
+        return 1 / (1 + Math.exp(-t));
+      }
+
+      function doublePitLossGrad(x, y) {
+        let value = 0.035 * x * x + 0.025 * y * y;
+        let gx = 0.07 * x;
+        let gy = 0.05 * y;
+        const terms = [
+          { amp: -1.25, cx: -1.42, cy: 0.58, sx: 0.58, sy: 0.52 },
+          { amp: -3.15, cx: 1.48, cy: -0.28, sx: 0.78, sy: 0.68 }
+        ];
+
+        for (const term of terms) {
+          const g = gaussian(x, y, term.cx, term.cy, term.sx, term.sy, term.amp);
+          value += g.value;
+          gx += g.gx;
+          gy += g.gy;
+        }
+
+        return { value, gx, gy };
+      }
+
+      function sgdPlateauLossGrad(x, y) {
+        const s = sigmoid(6.5 * (x + 2.25));
+        const pit = gaussian(x, y, sgdPlateauDrop.x, sgdPlateauDrop.y, 0.40, 0.40, -0.95);
+        const value = 0.85 - 1.10 * s + 0.0012 * (x + 0.62) * (x + 0.62) + 0.0015 * y * y + pit.value;
+        const gx = -1.10 * 6.5 * s * (1 - s) + 0.0024 * (x + 0.62) + pit.gx;
+        const gy = 0.003 * y + pit.gy;
+        return { value, gx, gy };
+      }
+
+      function valleyLossGrad(x, y) {
+        const dx = x - valleyOptimum.x;
+        const dy = y - valleyOptimum.y;
+        const along = dx * valleyAxis.x + dy * valleyAxis.y;
+        const cross = dx * valleyCross.x + dy * valleyCross.y;
+
+        return {
+          value: 0.5 * (valleyCurvature.cross * cross * cross + valleyCurvature.along * along * along),
+          gx: valleyCurvature.along * along * valleyAxis.x + valleyCurvature.cross * cross * valleyCross.x,
+          gy: valleyCurvature.along * along * valleyAxis.y + valleyCurvature.cross * cross * valleyCross.y,
+          cross
+        };
+      }
+
+      function matrixModeLossGrad(x, y) {
+        const dx = x - matrixOptimum.x;
+        const dy = y - matrixOptimum.y;
+
+        return {
+          value: 0.5 * (dx * dx + dy * dy),
+          gx: dx,
+          gy: dy,
+          cross: dy
+        };
+      }
+
+      function simulateSGD(lossFn, start, lr, count, noiseScale, seed, bounds) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = lossFn(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
+
+          if (i < count) {
+            const gx = current.gx + noiseScale * seededNoise(i, seed);
+            const gy = current.gy + noiseScale * seededNoise(i, seed + 19);
+            x = clamp(x - lr * gx, bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * gy, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function escapeNoiseBias(step) {
+        if (step >= 22 && step <= 42) {
+          return { x: -2.2, y: 0.55 };
+        }
+
+        return { x: 0, y: 0 };
+      }
+
+      function simulateEscapeSGD(start, lr, count, noiseScale, seed, bounds) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = doublePitLossGrad(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy) });
+
+          if (i < count) {
+            const bias = escapeNoiseBias(i);
+            const gx = current.gx + noiseScale * seededNoise(i, seed) + bias.x;
+            const gy = current.gy + noiseScale * seededNoise(i, seed + 19) + bias.y;
+            x = clamp(x - lr * gx, bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * gy, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function plateauNoiseVector(step, x, y) {
+        if (x > -1.55 && x < sgdPlateauDrop.x - 0.12) {
+          return {
+            x: -0.55 * (0.70 + 0.30 * Math.abs(seededNoise(step, 51))),
+            y: 0.22 * (y - sgdPlateauDrop.y) + 0.08 * seededNoise(step, 73)
+          };
+        }
+
+        return { x: 0, y: 0 };
+      }
+
+      function simulatePlateauEscapeSGD(start, lr, count, noiseScale, seed, bounds) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = sgdPlateauLossGrad(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy) });
+
+          if (i < count) {
+            const noise = plateauNoiseVector(i, x, y);
+            const gx = current.gx + noise.x + noiseScale * seededNoise(i, seed);
+            const gy = current.gy + noise.y + noiseScale * seededNoise(i, seed + 19);
+            x = clamp(x - lr * gx, bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * gy, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function simulateSGDM(lossFn, start, lr, count, noiseScale, seed, bounds, beta, momentumScale) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+        let vx = 0;
+        let vy = 0;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = lossFn(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
+
+          if (i < count) {
+            const gx = current.gx + noiseScale * seededNoise(i, seed);
+            const gy = current.gy + noiseScale * seededNoise(i, seed + 19);
+            vx = beta * vx + (1 - beta) * gx;
+            vy = beta * vy + (1 - beta) * gy;
+            x = clamp(x - lr * momentumScale * vx, bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * momentumScale * vy, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function simulateMatrixSGDM(start, lr, count, bounds, beta) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+        let vx = 0;
+        let vy = 0;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = matrixModeLossGrad(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
+
+          if (i < count) {
+            const gx = current.gx;
+            const gy = 0.12 * current.gy;
+            vx = beta * vx + (1 - beta) * gx;
+            vy = beta * vy + (1 - beta) * gy;
+            x = clamp(x - lr * vx, bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * vy, bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function orthogonalizedComponent(value) {
+        const magnitude = Math.abs(value);
+        if (magnitude < 0.02) {
+          return value / 0.02;
+        }
+
+        return Math.sign(value);
+      }
+
+      function simulateMuonProxy(start, lr, count, bounds, beta) {
+        const points = [];
+        let x = start.x;
+        let y = start.y;
+        let vx = 0;
+        let vy = 0;
+
+        for (let i = 0; i <= count; i += 1) {
+          const current = matrixModeLossGrad(x, y);
+          points.push({ x, y, z: current.value, gradNorm: Math.hypot(current.gx, current.gy), cross: current.cross });
+
+          if (i < count) {
+            const gx = current.gx;
+            const gy = 0.12 * current.gy;
+            vx = beta * vx + (1 - beta) * gx;
+            vy = beta * vy + (1 - beta) * gy;
+            x = clamp(x - lr * 0.65 * orthogonalizedComponent(vx), bounds.xmin, bounds.xmax);
+            y = clamp(y - lr * 0.65 * orthogonalizedComponent(vy), bounds.ymin, bounds.ymax);
+          }
+        }
+
+        return points;
+      }
+
+      function polyline(points, width, color, opacity) {
+        return "<polyline points=\"" + points + "\" fill=\"none\" stroke=\"" + color + "\" stroke-width=\"" + width + "\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"" + opacity + "\"/>";
+      }
+
+      function drawMesh(target, lossFn, bounds, cfg) {
+        const xCount = 17;
+        const yCount = 13;
+        const pieces = [];
+
+        for (let xi = 0; xi < xCount; xi += 1) {
+          const x = bounds.xmin + xi / (xCount - 1) * (bounds.xmax - bounds.xmin);
+          const pts = [];
+          for (let yi = 0; yi < yCount; yi += 1) {
+            const y = bounds.ymin + yi / (yCount - 1) * (bounds.ymax - bounds.ymin);
+            const p = project(x, y, lossFn(x, y).value, cfg);
+            pts.push(p.x.toFixed(1) + "," + p.y.toFixed(1));
+          }
+          pieces.push(polyline(pts.join(" "), xi % 4 === 0 ? 1.05 : 0.62, "#111", xi % 4 === 0 ? 0.50 : 0.20));
+        }
+
+        for (let yi = 0; yi < yCount; yi += 1) {
+          const y = bounds.ymin + yi / (yCount - 1) * (bounds.ymax - bounds.ymin);
+          const pts = [];
+          for (let xi = 0; xi < xCount; xi += 1) {
+            const x = bounds.xmin + xi / (xCount - 1) * (bounds.xmax - bounds.xmin);
+            const p = project(x, y, lossFn(x, y).value, cfg);
+            pts.push(p.x.toFixed(1) + "," + p.y.toFixed(1));
+          }
+          pieces.push(polyline(pts.join(" "), yi % 4 === 0 ? 1.05 : 0.62, "#111", yi % 4 === 0 ? 0.50 : 0.20));
+        }
+
+        target.innerHTML = pieces.join("");
+      }
+
+      function sgdValleyProject(x, y) {
+        const cfg = sgdValleyContourProjection;
+        return {
+          x: cfg.left + (x - cfg.xmin) / (cfg.xmax - cfg.xmin) * (cfg.right - cfg.left),
+          y: cfg.bottom - (y - cfg.ymin) / (cfg.ymax - cfg.ymin) * (cfg.bottom - cfg.top)
+        };
+      }
+
+      function sgdValleyPathFrom(points) {
+        return points.map((point, index) => {
+          const p = sgdValleyProject(point.x, point.y);
+          return (index === 0 ? "M " : "L ") + p.x.toFixed(2) + " " + p.y.toFixed(2);
+        }).join(" ");
+      }
+
+      function sgdValleyDot(dot, label, point, dx, dy) {
+        const p = sgdValleyProject(point.x, point.y);
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+        if (label) {
+          label.setAttribute("x", p.x + dx);
+          label.setAttribute("y", p.y + dy);
+        }
+      }
+
+      function drawValleyContours(target) {
+        const cfg = sgdValleyContourProjection;
+        const levels = [0.08, 0.16, 0.27, 0.42, 0.62, 0.88, 1.20, 1.58, 2.04, 2.58, 3.20, 3.92, 4.74, 5.66, 6.70, 7.86];
+        const pieces = [];
+        const clipId = target.id + "Clip";
+
+        function contourLoop(level) {
+          const alongRadius = Math.sqrt(2 * level / valleyCurvature.along);
+          const crossRadius = Math.sqrt(2 * level / valleyCurvature.cross);
+          const points = [];
+
+          for (let i = 0; i <= 180; i += 1) {
+            const theta = i / 180 * Math.PI * 2;
+            const along = alongRadius * Math.cos(theta);
+            const cross = crossRadius * Math.sin(theta);
+            points.push({
+              x: valleyOptimum.x + along * valleyAxis.x + cross * valleyCross.x,
+              y: valleyOptimum.y + along * valleyAxis.y + cross * valleyCross.y
+            });
+          }
+
+          return points;
+        }
+
+        function closedPath(points) {
+          return sgdValleyPathFrom(points) + " Z";
+        }
+
+        pieces.push("<defs><clipPath id=\"" + clipId + "\"><rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\"/></clipPath></defs>");
+        pieces.push("<g clip-path=\"url(#" + clipId + ")\">");
+        pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"#fbfcff\"/>");
+
+        for (let levelIndex = 0; levelIndex < levels.length; levelIndex += 1) {
+          const major = levelIndex % 4 === 0;
+          pieces.push(
+            "<path d=\"" + closedPath(contourLoop(levels[levelIndex])) + "\" fill=\"none\" stroke=\"" + (major ? "#717982" : "#b6bdc7") + "\" stroke-width=\"" + (major ? "1.45" : "0.92") + "\" opacity=\"" + (major ? "0.62" : "0.46") + "\"/>"
+          );
+        }
+
+        pieces.push("</g>");
+        pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"none\" stroke=\"#202124\" stroke-width=\"1\" opacity=\"0.22\"/>");
+
+        target.innerHTML = pieces.join("");
+      }
+
+      function drawMatrixModeContours(target) {
+        const cfg = sgdValleyContourProjection;
+        const levels = [0.04, 0.08, 0.14, 0.22, 0.34, 0.50, 0.72, 1.00, 1.34, 1.74, 2.20, 2.72, 3.30];
+        const pieces = [];
+        const clipId = target.id + "Clip";
+
+        function contourLoop(level) {
+          const xRadius = Math.sqrt(2 * level);
+          const yRadius = Math.sqrt(2 * level);
+          const points = [];
+
+          for (let i = 0; i <= 180; i += 1) {
+            const theta = i / 180 * Math.PI * 2;
+            points.push({
+              x: matrixOptimum.x + xRadius * Math.cos(theta),
+              y: matrixOptimum.y + yRadius * Math.sin(theta)
+            });
+          }
+
+          return points;
+        }
+
+        function closedPath(points) {
+          return sgdValleyPathFrom(points) + " Z";
+        }
+
+        pieces.push("<defs><clipPath id=\"" + clipId + "\"><rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\"/></clipPath></defs>");
+        pieces.push("<g clip-path=\"url(#" + clipId + ")\">");
+        pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"#fbfcff\"/>");
+
+        for (let levelIndex = 0; levelIndex < levels.length; levelIndex += 1) {
+          const major = levelIndex % 4 === 0;
+          pieces.push(
+            "<path d=\"" + closedPath(contourLoop(levels[levelIndex])) + "\" fill=\"none\" stroke=\"" + (major ? "#717982" : "#b6bdc7") + "\" stroke-width=\"" + (major ? "1.45" : "0.92") + "\" opacity=\"" + (major ? "0.62" : "0.46") + "\"/>"
+          );
+        }
+
+        pieces.push("</g>");
+        pieces.push("<rect x=\"" + cfg.left + "\" y=\"" + cfg.top + "\" width=\"" + (cfg.right - cfg.left) + "\" height=\"" + (cfg.bottom - cfg.top) + "\" fill=\"none\" stroke=\"#202124\" stroke-width=\"1\" opacity=\"0.22\"/>");
+
+        target.innerHTML = pieces.join("");
+      }
+
+      function pathFrom(points, cfg) {
+        return points.map((point, index) => {
+          const p = project(point.x, point.y, point.z, cfg);
+          return (index === 0 ? "M " : "L ") + p.x.toFixed(2) + " " + p.y.toFixed(2);
+        }).join(" ");
+      }
+
+      function placeDot(dot, label, point, lossFn, cfg, dx, dy) {
+        const z = point.z === undefined ? lossFn(point.x, point.y).value : point.z;
+        const p = project(point.x, point.y, z, cfg);
+        dot.setAttribute("cx", p.x);
+        dot.setAttribute("cy", p.y);
+        if (label) {
+          label.setAttribute("x", p.x + dx);
+          label.setAttribute("y", p.y + dy);
+        }
+      }
+
+      function signChanges(points) {
+        let changes = 0;
+        let lastSign = Math.sign(points[0].cross === undefined ? points[0].x : points[0].cross);
+
+        for (let i = 1; i < points.length; i += 1) {
+          const sign = Math.sign(points[i].cross === undefined ? points[i].x : points[i].cross);
+          if (sign !== 0 && lastSign !== 0 && sign !== lastSign) {
+            changes += 1;
+          }
+          if (sign !== 0) {
+            lastSign = sign;
+          }
+        }
+
+        return changes;
+      }
+
+      function renderSGD() {
+        const lr = Number(learningRate.value);
+        const count = Number(steps.value);
+        frame = Math.min(frame, count);
+
+        const noiseGdPoints = simulateSGD(doublePitLossGrad, noiseStart, lr, count, 0, 7, noiseBounds);
+        const noisePoints = simulateEscapeSGD(noiseStart, lr, count, 0.35, 7, noiseBounds);
+        const sgdPlateauGdPoints = simulateSGD(sgdPlateauLossGrad, sgdPlateauStart, lr, count, 0, 19, sgdPlateauBounds);
+        const sgdPlateauPoints = simulatePlateauEscapeSGD(sgdPlateauStart, lr, count, 0.025, 17, sgdPlateauBounds);
+        const valleyPoints = simulateSGD(valleyLossGrad, valleyStart, lr, count, 0.035, 41, valleyBounds);
+        const momentumPoints = simulateSGDM(valleyLossGrad, valleyStart, lr, count, 0.035, 41, valleyBounds, 0.88, 2.5);
+        const matrixSgdmPoints = simulateMatrixSGDM(matrixStart, lr, count, matrixBounds, 0.88);
+        const muonPoints = simulateMuonProxy(matrixStart, lr, count, matrixBounds, 0.88);
+        const visibleNoiseGd = noiseGdPoints.slice(0, frame + 1);
+        const visibleNoise = noisePoints.slice(0, frame + 1);
+        const visibleSgdPlateauGd = sgdPlateauGdPoints.slice(0, frame + 1);
+        const visibleSgdPlateau = sgdPlateauPoints.slice(0, frame + 1);
+        const visibleValley = valleyPoints.slice(0, frame + 1);
+        const visibleMomentum = momentumPoints.slice(0, frame + 1);
+        const visibleMatrixSgdm = matrixSgdmPoints.slice(0, frame + 1);
+        const visibleMuon = muonPoints.slice(0, frame + 1);
+        const noiseGdEnd = visibleNoiseGd[visibleNoiseGd.length - 1];
+        const noiseEnd = visibleNoise[visibleNoise.length - 1];
+        const sgdPlateauGdEnd = visibleSgdPlateauGd[visibleSgdPlateauGd.length - 1];
+        const sgdPlateauEnd = visibleSgdPlateau[visibleSgdPlateau.length - 1];
+        const valleyEnd = visibleValley[visibleValley.length - 1];
+        const momentumEnd = visibleMomentum[visibleMomentum.length - 1];
+        const matrixSgdmEnd = visibleMatrixSgdm[visibleMatrixSgdm.length - 1];
+        const muonEnd = visibleMuon[visibleMuon.length - 1];
+        const noiseDistance = Math.hypot(noiseEnd.x - noiseOptimum.x, noiseEnd.y - noiseOptimum.y);
+        const noiseGdDistance = Math.hypot(noiseGdEnd.x - noiseOptimum.x, noiseGdEnd.y - noiseOptimum.y);
+        const sgdPlateauDistance = Math.hypot(sgdPlateauEnd.x - sgdPlateauDrop.x, sgdPlateauEnd.y - sgdPlateauDrop.y);
+        const sgdPlateauGdDistance = Math.hypot(sgdPlateauGdEnd.x - sgdPlateauDrop.x, sgdPlateauGdEnd.y - sgdPlateauDrop.y);
+        const valleyDistance = Math.hypot(valleyEnd.x - valleyOptimum.x, valleyEnd.y - valleyOptimum.y);
+        const momentumDistance = Math.hypot(momentumEnd.x - valleyOptimum.x, momentumEnd.y - valleyOptimum.y);
+        const matrixSgdmDistance = Math.hypot(matrixSgdmEnd.x - matrixOptimum.x, matrixSgdmEnd.y - matrixOptimum.y);
+        const matrixWeakResidual = Math.abs(matrixSgdmEnd.y - matrixOptimum.y);
+        const muonDistance = Math.hypot(muonEnd.x - matrixOptimum.x, muonEnd.y - matrixOptimum.y);
+        const zigzags = signChanges(visibleValley);
+        const momentumZigzags = signChanges(visibleMomentum);
+
+        learningRateValue.textContent = fmt(lr, 3);
+        sgdmLearningRateMirror.textContent = fmt(lr, 3);
+        stepsValue.textContent = String(count);
+
+        noisePlot.gdPath.setAttribute("d", pathFrom(visibleNoiseGd, noiseProjection));
+        noisePlot.path.setAttribute("d", pathFrom(visibleNoise, noiseProjection));
+        placeDot(noisePlot.startDot, noisePlot.startLabel, noiseStart, doublePitLossGrad, noiseProjection, 10, -10);
+        placeDot(noisePlot.gdEndDot, noisePlot.gdEndLabel, noiseGdEnd, doublePitLossGrad, noiseProjection, -68, 22);
+        placeDot(noisePlot.endDot, null, noiseEnd, doublePitLossGrad, noiseProjection, 0, 0);
+        placeDot(noisePlot.optDot, noisePlot.optLabel, noiseOptimum, doublePitLossGrad, noiseProjection, 10, -10);
+        placeDot(noisePlot.localDot, noisePlot.localLabel, noiseLocal, doublePitLossGrad, noiseProjection, 10, -10);
+
+        sgdPlateauPlot.gdPath.setAttribute("d", pathFrom(visibleSgdPlateauGd, sgdPlateauProjection));
+        sgdPlateauPlot.path.setAttribute("d", pathFrom(visibleSgdPlateau, sgdPlateauProjection));
+        placeDot(sgdPlateauPlot.startDot, sgdPlateauPlot.startLabel, sgdPlateauStart, sgdPlateauLossGrad, sgdPlateauProjection, 10, -10);
+        placeDot(sgdPlateauPlot.gdEndDot, sgdPlateauPlot.gdEndLabel, sgdPlateauGdEnd, sgdPlateauLossGrad, sgdPlateauProjection, 10, -10);
+        placeDot(sgdPlateauPlot.endDot, null, sgdPlateauEnd, sgdPlateauLossGrad, sgdPlateauProjection, 0, 0);
+        placeDot(sgdPlateauPlot.dropDot, sgdPlateauPlot.dropLabel, sgdPlateauDrop, sgdPlateauLossGrad, sgdPlateauProjection, 10, -10);
+
+        valleyPlot.path.setAttribute("d", sgdValleyPathFrom(visibleValley));
+        sgdValleyDot(valleyPlot.startDot, valleyPlot.startLabel, valleyStart, 10, -10);
+        sgdValleyDot(valleyPlot.endDot, null, valleyEnd, 0, 0);
+        sgdValleyDot(valleyPlot.optDot, valleyPlot.optLabel, valleyOptimum, 10, -10);
+
+        sgdmContourPlot.sgdPath.setAttribute("d", sgdValleyPathFrom(visibleValley));
+        sgdmContourPlot.path.setAttribute("d", sgdValleyPathFrom(visibleMomentum));
+        sgdValleyDot(sgdmContourPlot.startDot, sgdmContourPlot.startLabel, valleyStart, 10, -10);
+        sgdValleyDot(sgdmContourPlot.sgdEndDot, null, valleyEnd, 0, 0);
+        sgdValleyDot(sgdmContourPlot.endDot, null, momentumEnd, 0, 0);
+        sgdValleyDot(sgdmContourPlot.optDot, sgdmContourPlot.optLabel, valleyOptimum, 10, -10);
+
+        sgdmPlot.sgdPath.setAttribute("d", sgdValleyPathFrom(visibleMatrixSgdm));
+        sgdmPlot.path.setAttribute("d", sgdValleyPathFrom(visibleMuon));
+        sgdValleyDot(sgdmPlot.startDot, sgdmPlot.startLabel, matrixStart, 10, -10);
+        sgdValleyDot(sgdmPlot.endDot, null, muonEnd, 0, 0);
+        sgdValleyDot(sgdmPlot.weakDot, sgdmPlot.weakLabel, matrixSgdmEnd, 10, 18);
+        sgdValleyDot(sgdmPlot.optDot, sgdmPlot.optLabel, matrixOptimum, 10, -10);
+
+        noiseReadout.textContent = "step " + frame + " / " + count + " | SGD big " + fmt(noiseDistance, 3) + " | GD big " + fmt(noiseGdDistance, 3);
+        sgdPlateauReadout.textContent = "step " + frame + " / " + count + " | SGD dist " + fmt(sgdPlateauDistance, 3) + " | GD dist " + fmt(sgdPlateauGdDistance, 3);
+        valleyReadout.textContent = "step " + frame + " / " + count + " | zigzags " + zigzags + " | dist " + fmt(valleyDistance, 3);
+        sgdmContourReadout.textContent = "step " + frame + " / " + count + " | SGD zig " + zigzags + " | SGDM zig " + momentumZigzags;
+        sgdmReadout.textContent = "step " + frame + " / " + count + " | weak " + fmt(matrixWeakResidual, 3) + " | Muon dist " + fmt(muonDistance, 3);
+
+        if (noiseEnd.x > 0.25) {
+          noiseStatus.textContent = "噪音向量：SGD 已经被 mini-batch 噪音推出小坑，灰色 GD 仍停在左侧小坑附近。";
+        } else if (frame >= 22 && frame <= 42) {
+          noiseStatus.textContent = "噪音向量：这一段 batch 噪音向量持续把点往右推，可能帮它逃出浅坑。";
+        } else {
+          noiseStatus.textContent = "噪音向量：SGD 和 GD 还都在左侧小坑附近，但 SGD 梯度里带有随机扰动。";
+        }
+
+        if (sgdPlateauDistance < 0.28) {
+          sgdPlateauStatus.textContent = "平地：SGD 已经被 mini-batch 噪音推到最优坑附近，而灰色 GD 仍停在平地上。";
+        } else if (sgdPlateauEnd.x > -1.55) {
+          sgdPlateauStatus.textContent = "平地：进入低梯度区域后，batch 噪音向量正在把 SGD 继续往右侧坑推进。";
+        } else {
+          sgdPlateauStatus.textContent = "平地：刚从斜坡下降时，SGD 和 GD 的路径还比较接近。";
+        }
+
+        if (zigzags >= 4) {
+          valleyStatus.textContent = "山谷：已经上下横跳 " + zigzags + " 次；虽然整体在往左侧低谷下降，但路径不够顺。";
+        } else if (Math.abs(valleyEnd.y) > 0.25) {
+          valleyStatus.textContent = "山谷：上下方向曲率太大，SGD 会先被陡方向牵着来回摆动。";
+        } else {
+          valleyStatus.textContent = "山谷：上下震荡变小，但沿谷底往左推进仍然比较慢。";
+        }
+
+        if (frame < 8) {
+          sgdmContourStatus.textContent = "等高线：两条路径刚进入狭长山谷，上下方向的陡梯度还占主导。";
+        } else if (momentumZigzags < zigzags) {
+          sgdmContourStatus.textContent = "等高线：SGDM 把上下震荡从 " + zigzags + " 次压到 " + momentumZigzags + " 次，路径更贴近向左的谷底方向。";
+        } else {
+          sgdmContourStatus.textContent = "等高线：SGD 仍在上下穿过灰色等高线，SGDM 正在累积更稳定的向左方向。";
+        }
+
+        if (frame < 8) {
+          sgdmStatus.textContent = "矩阵方向：SGDM 和 Muon 都从同一个矩阵状态出发，但 Muon 会先把 momentum 更新正交化。";
+        } else if (matrixWeakResidual > 0.30 && muonDistance < matrixSgdmDistance) {
+          sgdmStatus.textContent = "矩阵方向：SGDM 的主方向已经降下去，但弱方向还残留 " + fmt(matrixWeakResidual, 3) + "；Muon 更接近最优点。";
+        } else if (muonDistance < matrixSgdmDistance) {
+          sgdmStatus.textContent = "矩阵方向：Muon 把矩阵更新变得更均衡，距离 " + fmt(muonDistance, 3) + "，SGDM 距离 " + fmt(matrixSgdmDistance, 3) + "。";
+        } else {
+          sgdmStatus.textContent = "矩阵方向：SGDM 仍在用未正交化的 momentum，弱方向推进更慢。";
+        }
+      }
+
+      drawMesh(noisePlot.mesh, doublePitLossGrad, noiseBounds, noiseProjection);
+      drawMesh(sgdPlateauPlot.mesh, sgdPlateauLossGrad, sgdPlateauBounds, sgdPlateauProjection);
+      drawValleyContours(valleyPlot.mesh);
+      drawValleyContours(sgdmContourPlot.lines);
+      drawMatrixModeContours(sgdmPlot.mesh);
+      renderSGD();
+
+      window.setInterval(function () {
+        const count = Number(steps.value);
+        frame = frame >= count ? 0 : frame + 1;
+        renderSGD();
+      }, 95);
+
+      learningRate.addEventListener("input", function () {
+        frame = 0;
+        renderSGD();
+      });
+
+      steps.addEventListener("input", function () {
+        frame = 0;
+        renderSGD();
+      });
+
+      resetButton.addEventListener("click", function () {
+        learningRate.value = learningRate.defaultValue;
+        steps.value = steps.defaultValue;
+        frame = 0;
+        renderSGD();
+      });
+    })();
+  </script>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      if (!window.renderMathInElement) {
+        return;
+      }
+
+      document.querySelectorAll(".formula").forEach(function (element) {
+        window.renderMathInElement(element, {
+          delimiters: [
+            { left: "\\[", right: "\\]", display: true },
+            { left: "\\(", right: "\\)", display: false }
+          ],
+          ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"],
+          throwOnError: false
+        });
+      });
+    });
   </script>
 </body>
 </html>
